@@ -8,6 +8,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const { name, description, userId } = req.body
       
+      // Validate required fields
+      if (!name || !userId) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: name, userId' 
+        })
+      }
+      
       const project = await prisma.project.create({
         data: {
           name,
@@ -18,6 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       res.status(201).json(project)
     } catch (error) {
+      console.error('Error creating project:', error)
       res.status(500).json({ error: 'Failed to create project' })
     }
   } else if (req.method === 'GET') {
@@ -36,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       res.status(200).json(projects)
     } catch (error) {
+      console.error('Error fetching projects:', error)
       res.status(500).json({ error: 'Failed to fetch projects' })
     }
   } else {

@@ -8,6 +8,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const { type, projectId, videoId, metadata } = req.body
       
+      // Validate required fields
+      if (!type || !projectId) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: type, projectId' 
+        })
+      }
+      
       const job = await prisma.job.create({
         data: {
           type,
@@ -20,6 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       res.status(201).json(job)
     } catch (error) {
+      console.error('Error creating job:', error)
       res.status(500).json({ error: 'Failed to create job' })
     }
   } else if (req.method === 'GET') {
@@ -45,6 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       res.status(200).json(jobs)
     } catch (error) {
+      console.error('Error fetching jobs:', error)
       res.status(500).json({ error: 'Failed to fetch jobs' })
     }
   } else {

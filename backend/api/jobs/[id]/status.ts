@@ -26,6 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       res.status(200).json(job)
     } catch (error) {
+      console.error('Error fetching job status:', error)
       res.status(500).json({ error: 'Failed to fetch job status' })
     }
   } else {
