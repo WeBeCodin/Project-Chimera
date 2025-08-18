@@ -17,16 +17,23 @@
   "dependencies": {
     "@prisma/client": "^5.20.0",
     "@vercel/node": "^3.0.21",
+    "aws-sdk": "^2.1692.0",
     "next-auth": "^4.24.7"
   },
   "devDependencies": {
+    "@types/aws-sdk": "^0.0.42",
     "@types/node": "^20.0.0",
     "eslint": "^9.0.0",
     "prisma": "^5.20.0",
     "tsx": "^4.7.1",
     "typescript": "^5.0.0"
   },
-  "keywords": ["vercel", "functions", "api", "prisma"],
+  "keywords": [
+    "vercel",
+    "functions",
+    "api",
+    "prisma"
+  ],
   "author": "",
   "license": "ISC"
 }
