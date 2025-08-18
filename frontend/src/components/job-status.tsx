@@ -26,6 +26,7 @@ interface Job {
 interface JobStatusProps {
   job: Job
   showDetails?: boolean
+  onViewResults?: (videoId: string) => void
 }
 
 const statusIcons = {
@@ -44,7 +45,7 @@ const statusColors = {
   CANCELLED: 'text-gray-500 bg-gray-50 border-gray-200',
 }
 
-export function JobStatus({ job, showDetails = false }: JobStatusProps) {
+export function JobStatus({ job, showDetails = false, onViewResults }: JobStatusProps) {
   const StatusIcon = statusIcons[job.status]
   const statusColorClass = statusColors[job.status]
 
@@ -95,6 +96,14 @@ export function JobStatus({ job, showDetails = false }: JobStatusProps) {
             <p className="text-xs opacity-75 mt-1">
               Duration: {getDuration()}
             </p>
+          )}
+          {job.status === 'COMPLETED' && job.video?.id && onViewResults && (
+            <button
+              onClick={() => onViewResults(job.video!.id)}
+              className="mt-2 px-3 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              View Results
+            </button>
           )}
         </div>
       </div>
@@ -154,9 +163,10 @@ interface JobListProps {
   loading?: boolean
   error?: string | null
   onRefresh?: () => void
+  onViewResults?: (videoId: string) => void
 }
 
-export function JobList({ jobs, loading, error, onRefresh }: JobListProps) {
+export function JobList({ jobs, loading, error, onRefresh, onViewResults }: JobListProps) {
   if (error) {
     return (
       <div className="text-center py-8">
@@ -212,7 +222,7 @@ export function JobList({ jobs, loading, error, onRefresh }: JobListProps) {
       
       <div className="space-y-3">
         {jobs.map((job) => (
-          <JobStatus key={job.id} job={job} showDetails />
+          <JobStatus key={job.id} job={job} showDetails onViewResults={onViewResults} />
         ))}
       </div>
     </div>

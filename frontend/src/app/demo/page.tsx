@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { VideoUpload } from '@/components/video-upload'
 import { JobList } from '@/components/job-status'
 import { TranscriptEditor } from '@/components/transcript-editor'
+import { AnalysisResultsDisplay } from '@/components/analysis-results-display'
 
 interface Job {
   id: string
@@ -35,6 +37,10 @@ export default function ProjectPage() {
     type: 'success' | 'error' | 'info'
     message: string
   } | null>(null)
+  const [currentView, setCurrentView] = useState<'jobs' | 'analysis'>('jobs')
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null)
+  const [analysisResults, setAnalysisResults] = useState<any>(null)
+  const [analysisLoading, setAnalysisLoading] = useState(false)
 
   // Function to fetch jobs from API
   const fetchJobs = async () => {
@@ -98,6 +104,39 @@ export default function ProjectPage() {
     setTimeout(() => setNotification(null), 8000)
   }
 
+  const handleViewResults = async (videoId: string) => {
+    try {
+      setAnalysisLoading(true)
+      setSelectedVideoId(videoId)
+      setCurrentView('analysis')
+      
+      const response = await fetch(`/api/videos/${videoId}/analysis`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch analysis results')
+      }
+      
+      const results = await response.json()
+      setAnalysisResults(results)
+    } catch (err) {
+      console.error('Error fetching analysis results:', err)
+      setNotification({
+        type: 'error',
+        message: `Failed to load analysis results: ${err instanceof Error ? err.message : 'Unknown error'}`
+      })
+      setTimeout(() => setNotification(null), 8000)
+      setCurrentView('jobs') // Go back to jobs view on error
+    } finally {
+      setAnalysisLoading(false)
+    }
+  }
+
+  const handleBackToJobs = () => {
+    setCurrentView('jobs')
+    setSelectedVideoId(null)
+    setAnalysisResults(null)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -108,8 +147,16 @@ export default function ProjectPage() {
               <h1 className="text-3xl font-bold text-gray-900">Project Chimera</h1>
               <p className="text-gray-600 mt-1">Video processing and transcript editing platform</p>
             </div>
-            <div className="text-sm text-gray-500">
-              Project ID: <code className="bg-gray-100 px-2 py-1 rounded">{DEMO_PROJECT_ID}</code>
+            <div className="flex items-center gap-4">
+              <Link 
+                href="/admin"
+                className="px-3 py-2 text-sm text-orange-600 border border-orange-600 rounded-lg hover:bg-orange-50 transition-colors"
+              >
+                Admin Panel
+              </Link>
+              <div className="text-sm text-gray-500">
+                Project ID: <code className="bg-gray-100 px-2 py-1 rounded">{DEMO_PROJECT_ID}</code>
+              </div>
             </div>
           </div>
         </div>
@@ -142,15 +189,24 @@ export default function ProjectPage() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
-          {/* Job Status Section */}
+          {/* Main Content */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg border shadow-sm p-6">
-              <JobList 
-                jobs={jobs}
-                loading={loading}
-                error={error}
-                onRefresh={fetchJobs}
-              />
+              {currentView === 'jobs' ? (
+                <JobList 
+                  jobs={jobs}
+                  loading={loading}
+                  error={error}
+                  onRefresh={fetchJobs}
+                  onViewResults={handleViewResults}
+                />
+              ) : currentView === 'analysis' ? (
+                <AnalysisResultsDisplay
+                  result={analysisResults}
+                  loading={analysisLoading}
+                  onBack={handleBackToJobs}
+                />
+              ) : null}
             </div>
           </div>
 
