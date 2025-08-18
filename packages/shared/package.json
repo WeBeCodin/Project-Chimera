@@ -1,0 +1,29 @@
+{
+  "name": "@chimera/shared",
+  "version": "1.0.0",
+  "description": "Shared TypeScript libraries for Project Chimera",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint . --ext .ts",
+    "type-check": "tsc --noEmit"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "zod": "^3.22.0"
+  },
+  "keywords": ["shared", "utilities", "types"],
+  "author": "",
+  "license": "ISC"
+}

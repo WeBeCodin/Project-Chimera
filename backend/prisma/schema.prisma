@@ -1,0 +1,86 @@
+# This is your Prisma schema file,
+# learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  projects  Project[]
+  
+  @@map("users")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  videos      Video[]
+  jobs        Job[]
+  
+  @@map("projects")
+}
+
+model Video {
+  id          String   @id @default(cuid())
+  filename    String
+  originalUrl String
+  processedUrl String?
+  duration    Int? // Duration in seconds
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  jobs        Job[]
+  
+  @@map("videos")
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  type        String    // e.g., "transcription", "processing"
+  status      JobStatus @default(PENDING)
+  metadata    Json?     // Flexible field for job-specific data
+  result      Json?     // Job result data
+  error       String?   // Error message if failed
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  startedAt   DateTime?
+  completedAt DateTime?
+  
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  videoId     String?
+  video       Video?    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  
+  @@map("jobs")
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
