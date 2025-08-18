@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { createEditor, Descendant } from 'slate'
 import { Slate, Editable, withReact } from 'slate-react'
 
@@ -18,15 +18,13 @@ const initialValue: Descendant[] = [
 
 export function TranscriptEditor() {
   const editor = useMemo(() => withReact(createEditor()), [])
-  const [value, setValue] = useState<Descendant[]>(initialValue)
 
   return (
     <div className="border rounded-lg p-4">
       <h3 className="text-lg font-semibold mb-2">Transcript Editor</h3>
       <Slate 
         editor={editor} 
-        initialValue={initialValue} 
-        onValueChange={(newValue) => setValue(newValue)}
+        initialValue={initialValue}
       >
         <Editable
           placeholder="Enter transcript content here..."
