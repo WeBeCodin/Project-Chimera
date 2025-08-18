@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { VideoUpload } from '@/components/video-upload'
 import { JobList } from '@/components/job-status'
 import { TranscriptEditor } from '@/components/transcript-editor'
@@ -11,9 +12,25 @@ export default function Home() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Project Chimera</h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 mb-6">
             Video processing and transcript editing platform
           </p>
+          <div className="flex justify-center gap-4">
+            <Link 
+              href="/demo" 
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Try Demo
+            </Link>
+            <a 
+              href="https://github.com/WeBeCodin/Project-Chimera" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+            >
+              View Source
+            </a>
+          </div>
         </div>
 
         {/* Video Upload Section */}
