@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "name": "project-chimera",
+  "framework": "nextjs",
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/.next",
+  "installCommand": "npm install",
+  "devCommand": "cd frontend && npm run dev",
+  "regions": ["iad1"],
+  "functions": {
+    "backend/api/**/*.ts": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/backend/api/$1"
+    }
+  ],
+  "env": {
+    "NEXTAUTH_URL": "@nextauth-url",
+    "NEXTAUTH_SECRET": "@nextauth-secret",
+    "POSTGRES_PRISMA_URL": "@postgres-prisma-url",
+    "POSTGRES_URL_NON_POOLING": "@postgres-url-non-pooling",
+    "AWS_REGION": "@aws-region",
+    "AWS_ACCESS_KEY_ID": "@aws-access-key-id",
+    "AWS_SECRET_ACCESS_KEY": "@aws-secret-access-key",
+    "S3_BUCKET_NAME": "@s3-bucket-name"
+  }
+}
