@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Clock, User, Mic, Volume2, FileText } from 'lucide-react'
+import { Clock, Mic, Volume2, FileText } from 'lucide-react'
 
 interface TranscriptSegment {
   start: number

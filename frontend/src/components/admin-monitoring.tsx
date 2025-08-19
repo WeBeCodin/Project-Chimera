@@ -3,12 +3,23 @@
 import React, { useState, useEffect } from 'react'
 import { Activity, Server, Database, RefreshCw, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
 
+interface Job {
+  id: string
+  type: string
+  status: string
+  createdAt: string
+  updatedAt: string
+  video?: {
+    filename: string
+  }
+}
+
 interface AdminStats {
   totalJobs: number
   runningJobs: number
   completedJobs: number
   failedJobs: number
-  recentJobs: any[]
+  recentJobs: Job[]
 }
 
 export function AdminMonitoringPanel() {
@@ -38,9 +49,9 @@ export function AdminMonitoringPanel() {
       
       const statsData = {
         totalJobs: jobs.length,
-        runningJobs: jobs.filter((job: any) => job.status === 'RUNNING').length,
-        completedJobs: jobs.filter((job: any) => job.status === 'COMPLETED').length,
-        failedJobs: jobs.filter((job: any) => job.status === 'FAILED').length,
+        runningJobs: jobs.filter((job: Job) => job.status === 'RUNNING').length,
+        completedJobs: jobs.filter((job: Job) => job.status === 'COMPLETED').length,
+        failedJobs: jobs.filter((job: Job) => job.status === 'FAILED').length,
         recentJobs: jobs.slice(0, 10) // Get 10 most recent jobs
       }
       
