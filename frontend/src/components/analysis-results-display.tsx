@@ -13,14 +13,14 @@ interface VideoAnalysisResult {
     originalUrl: string
     duration?: number
   }
-  transcription: any
-  detection: any
-  summarization: any
-  jobs: any[]
+  transcription: Record<string, unknown>
+  detection: Record<string, unknown>
+  summarization: Record<string, unknown>
+  jobs: Array<Record<string, unknown>>
 }
 
 interface AnalysisResultsDisplayProps {
-  result: VideoAnalysisResult
+  result: VideoAnalysisResult | null
   loading?: boolean
   onBack?: () => void
 }

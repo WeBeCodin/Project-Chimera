@@ -38,8 +38,7 @@ export default function ProjectPage() {
     message: string
   } | null>(null)
   const [currentView, setCurrentView] = useState<'jobs' | 'analysis'>('jobs')
-  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null)
-  const [analysisResults, setAnalysisResults] = useState<any>(null)
+  const [analysisResults, setAnalysisResults] = useState<Record<string, unknown> | null>(null)
   const [analysisLoading, setAnalysisLoading] = useState(false)
 
   // Function to fetch jobs from API
@@ -107,7 +106,6 @@ export default function ProjectPage() {
   const handleViewResults = async (videoId: string) => {
     try {
       setAnalysisLoading(true)
-      setSelectedVideoId(videoId)
       setCurrentView('analysis')
       
       const response = await fetch(`/api/videos/${videoId}/analysis`)
@@ -133,7 +131,6 @@ export default function ProjectPage() {
 
   const handleBackToJobs = () => {
     setCurrentView('jobs')
-    setSelectedVideoId(null)
     setAnalysisResults(null)
   }
 

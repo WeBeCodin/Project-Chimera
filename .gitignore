@@ -10,7 +10,9 @@ pnpm-debug.log*
 .vercel/
 dist/
 build/
-lib/
+*/lib/*.js
+*/lib/*.d.ts
+!infra/lib/*.ts
 *.tsbuildinfo
 cdk.out/
 

@@ -14,7 +14,11 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check",
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel",
+    "db:migrate": "cd backend && npm run prisma:push",
+    "db:seed": "cd backend && npm run db:setup"
   },
   "keywords": ["monorepo", "turborepo", "nextjs", "vercel", "aws-cdk"],
   "author": "",
