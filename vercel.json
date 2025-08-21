@@ -1,10 +1,6 @@
 {
   "version": 2,
   "name": "project-chimera",
-  "buildCommand": "npm run build --workspace=frontend",
-  "outputDirectory": "frontend/.next",
-  "installCommand": "npm install",
-  "regions": ["iad1"],
   "functions": {
     "backend/api/**/*.ts": {
       "runtime": "nodejs20.x",
