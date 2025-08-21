@@ -2,12 +2,12 @@
 
 A modern video processing and transcript editing platform built with a Turborepo monorepo architecture. Upload videos, process them through AWS infrastructure, and edit transcripts with real-time collaboration.
 
-🚀 **[Live Demo →](https://project-chimera-beta.vercel.app)** 
+🚀 **[Live Demo →](https://project-chimera-beta.vercel.app)**
 
 ## ✨ Features
 
 - 🎥 **Video Upload & Processing** - Drag-and-drop, file select, and URL ingestion
-- ☁️ **AWS S3 Storage** - Secure cloud storage with pre-signed URLs  
+- ☁️ **AWS S3 Storage** - Secure cloud storage with pre-signed URLs
 - ⚡ **Step Functions Orchestration** - Automated transcription and analysis pipeline
 - 📊 **Real-time Job Status** - Live polling and progress tracking
 - ✏️ **Transcript Editor** - Rich text editing with Slate.js
@@ -25,7 +25,7 @@ A modern video processing and transcript editing platform built with a Turborepo
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 - AWS Account (for infrastructure)
 - Vercel Account (for deployment)
@@ -56,21 +56,25 @@ npm run lint
 ## Workspaces
 
 ### `/frontend` - Next.js Application
+
 Next.js 14+ with App Router, TypeScript, Tailwind CSS v4, Shadcn/UI components, Zustand state management, Framer Motion animations, and Slate.js for transcript editing.
 
 [Frontend Documentation](./frontend/README.md)
 
 ### `/backend` - Vercel Functions API
+
 Serverless API with TypeScript, Prisma ORM, and PostgreSQL. Includes endpoints for project creation, job management, and status polling.
 
 [Backend Documentation](./backend/README.md)
 
 ### `/infra` - AWS CDK Infrastructure
+
 Infrastructure-as-code using AWS CDK with TypeScript. Provisions S3 bucket, Lambda functions, and Step Functions for video processing workflows.
 
 [Infrastructure Documentation](./infra/README.md)
 
 ### `/packages/shared` - Shared Libraries
+
 Common TypeScript libraries including Zod schemas, utility functions, and React hooks used across all workspaces.
 
 [Shared Documentation](./packages/shared/README.md)
@@ -78,6 +82,7 @@ Common TypeScript libraries including Zod schemas, utility functions, and React 
 ## Database Schema
 
 The Prisma schema includes:
+
 - **User** - User accounts and authentication
 - **Project** - Video processing projects
 - **Video** - Video file metadata and URLs
@@ -105,6 +110,7 @@ The Prisma schema includes:
 ### Manual Deployment Steps
 
 1. **Deploy Infrastructure (AWS CDK)**
+
    ```bash
    cd infra
    npm install
@@ -113,11 +119,13 @@ The Prisma schema includes:
    ```
 
 2. **Set up Vercel Postgres Database**
+
    - Create a new Vercel project
    - Add Vercel Postgres to your project
    - Copy the connection strings
 
 3. **Deploy to Vercel**
+
    ```bash
    vercel --prod
    ```
@@ -136,6 +144,7 @@ The Prisma schema includes:
 ## 🔧 Environment Variables
 
 ### Backend (.env)
+
 ```env
 # Database (from Vercel Postgres)
 POSTGRES_PRISMA_URL="postgresql://..."
@@ -145,7 +154,7 @@ POSTGRES_URL_NON_POOLING="postgresql://..."
 NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="https://your-domain.vercel.app"
 
-# AWS Configuration  
+# AWS Configuration
 AWS_REGION="us-east-1"
 AWS_ACCESS_KEY_ID="your-access-key"
 AWS_SECRET_ACCESS_KEY="your-secret-key"
@@ -153,6 +162,7 @@ S3_BUCKET_NAME="chimera-videos-123456789012"
 ```
 
 ### Frontend (.env.local)
+
 ```env
 NEXT_PUBLIC_API_URL="https://your-domain.vercel.app"
 ```
@@ -166,7 +176,7 @@ The monorepo uses Turborepo for build orchestration and npm workspaces for depen
 ```
 project-chimera/
 ├── frontend/          # Next.js application
-├── backend/           # Vercel Functions API  
+├── backend/           # Vercel Functions API
 ├── infra/            # AWS CDK infrastructure
 ├── packages/shared/  # Shared TypeScript libraries
 ├── vercel.json      # Vercel deployment config
@@ -177,3 +187,9 @@ project-chimera/
 <!-- Deployment trigger: August 21, 2025 -->
 
 ```
+
+<<<<<<< HEAD
+
+# <!-- Deployment trigger: August 21, 2025 -->
+
+> > > > > > > 1304e7a99658f583a9db1fec687c65401777f17a
