@@ -171,4 +171,9 @@ project-chimera/
 ├── packages/shared/  # Shared TypeScript libraries
 ├── vercel.json      # Vercel deployment config
 └── turbo.json       # Turborepo configuration
+
+
+
+<!-- Deployment trigger: August 21, 2025 -->
+
 ```
