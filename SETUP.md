@@ -14,14 +14,19 @@ This guide explains how to set up and use the complete backend and database syst
 
 ### 1. Database Setup
 
-1. Create a Vercel Postgres database in your project dashboard
-2. Copy the connection strings to `backend/.env`:
+1. Create a free Supabase PostgreSQL database:
+   - Sign up at [supabase.com](https://supabase.com)
+   - Create a new project 
+   - Go to Settings > Database
+   - Copy the connection string
+   
+2. Copy the connection string to `backend/.env`:
 
 ```env
-POSTGRES_PRISMA_URL="postgresql://username:password@host/db?pgbouncer=true"
-POSTGRES_URL_NON_POOLING="postgresql://username:password@host/db"
+DATABASE_URL="postgresql://postgres:[password]@[host]:5432/[database]"
 NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="https://your-domain.com"
+BLOB_READ_WRITE_TOKEN="your-vercel-blob-token"
 ```
 
 ### 2. Deploy to Vercel
@@ -160,18 +165,18 @@ enum JobStatus {
 ## Deployment Architecture
 
 ```
-Frontend (Next.js) → API Routes (Vercel Functions) → Prisma → PostgreSQL
+Frontend (Next.js) → API Routes (Vercel Functions) → Prisma → Supabase PostgreSQL
                               ↓
-                         AWS Lambda (Processing)
+                        Vercel Blob (File Storage)
                               ↓
-                         S3 (Video Storage)
+                    Optional: AWS Lambda (Processing)
 ```
 
 ## Job Processing Flow
 
-1. **Video Upload** → Creates video record + transcription job
-2. **Job Status Polling** → Frontend monitors job progress
-3. **AWS Processing** → Lambda functions update job status/results
+1. **Video Upload** → Uploads to Vercel Blob → Creates video record + analysis jobs
+2. **Job Status Polling** → Frontend monitors job progress  
+3. **Optional Processing** → AWS Lambda functions can update job status/results
 4. **Results Storage** → Job results stored in database
 
 ## Security Notes
