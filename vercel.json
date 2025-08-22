@@ -1,6 +1,9 @@
 {
   "version": 2,
   "name": "project-chimera",
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/.next",
+  "installCommand": "npm install",
   "functions": {
     "backend/api/**/*.ts": {
       "runtime": "nodejs20.x",
