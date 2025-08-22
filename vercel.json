@@ -4,12 +4,7 @@
   "buildCommand": "npm run build --workspace=frontend",
   "outputDirectory": "frontend/.next",
   "installCommand": "npm install",
-  "functions": {
-    "backend/api/**/*.ts": {
-      "runtime": "nodejs20.x",
-      "maxDuration": 30
-    }
-  },
+
   "rewrites": [
     {
       "source": "/api/(.*)",
