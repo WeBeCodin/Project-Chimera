@@ -1,16 +1,17 @@
 import { type VercelRequest, type VercelResponse } from '@vercel/node'
-import AWS from 'aws-sdk'
-
-// Configure AWS SDK
-const s3 = new AWS.S3({
-  region: process.env.AWS_REGION || 'us-east-1',
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-})
+import { put } from '@vercel/blob'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'POST') {
     try {
+      // Handle multipart form upload directly
+      if (req.headers['content-type']?.includes('multipart/form-data')) {
+        // This would require a form parser, but for now we'll handle file uploads differently
+        return res.status(400).json({
+          error: 'Direct file upload not supported in this endpoint. Use blob-upload instead.'
+        })
+      }
+
       const { filename, contentType, projectId } = req.body
       
       // Validate required fields
@@ -19,41 +20,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           error: 'Missing required fields: filename, contentType, projectId' 
         })
       }
-      
-      // Generate a unique key for the S3 object
-      const timestamp = Date.now()
-      const randomSuffix = Math.random().toString(36).substring(2, 15)
-      const s3Key = `uploads/${projectId}/${timestamp}-${randomSuffix}-${filename}`
-      
-      // Parameters for the pre-signed URL
-      const params = {
-        Bucket: process.env.S3_BUCKET_NAME || `chimera-videos-${process.env.AWS_ACCOUNT_ID}`,
-        Key: s3Key,
-        Expires: 60 * 15, // 15 minutes
-        ContentType: contentType,
-        Metadata: {
-          projectId,
-          originalFilename: filename,
-          uploadedAt: new Date().toISOString(),
-        },
+
+      // Validate Vercel Blob token
+      if (!process.env.BLOB_READ_WRITE_TOKEN) {
+        return res.status(500).json({
+          error: 'Vercel Blob token not configured'
+        })
       }
       
-      // Generate pre-signed URL for PUT request
-      const uploadUrl = await s3.getSignedUrlPromise('putObject', params)
+      // Generate a unique key for the blob object
+      const timestamp = Date.now()
+      const randomSuffix = Math.random().toString(36).substring(2, 15)
+      const blobKey = `uploads/${projectId}/${timestamp}-${randomSuffix}-${filename}`
       
-      // Also generate a pre-signed URL for GET request (for accessing the file later)
-      const viewUrl = await s3.getSignedUrlPromise('getObject', {
-        Bucket: params.Bucket,
-        Key: s3Key,
-        Expires: 60 * 60 * 24, // 24 hours
-      })
-      
+      // For Vercel Blob, we return the upload information
+      // The client will need to upload using the separate blob-upload endpoint
       res.status(200).json({
-        uploadUrl,
-        viewUrl,
-        s3Key,
-        bucket: params.Bucket,
-        expiresIn: params.Expires,
+        blobKey,
+        uploadEndpoint: '/api/videos/blob-upload',
+        expiresIn: 60 * 15, // 15 minutes (for compatibility)
         metadata: {
           projectId,
           filename,
@@ -61,7 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
       })
     } catch (error) {
-      console.error('Error generating pre-signed URL:', error)
+      console.error('Error generating blob upload info:', error)
       res.status(500).json({ 
         error: 'Failed to generate upload URL',
         details: error instanceof Error ? error.message : 'Unknown error'
