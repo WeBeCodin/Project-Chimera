@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
+    "@vercel/blob": "^1.1.1",
     "@vercel/node": "^3.0.21",
     "aws-sdk": "^2.1692.0",
     "next-auth": "^4.24.7"
