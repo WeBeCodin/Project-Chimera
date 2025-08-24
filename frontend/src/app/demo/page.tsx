@@ -215,14 +215,18 @@ export default function ProjectPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span className="text-sm">S3 Pre-signed Upload URLs</span>
+                  <span className="text-sm">Vercel Blob File Storage</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  <span className="text-sm">Step Functions Orchestration</span>
+                  <span className="text-sm">Supabase PostgreSQL</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                  <span className="text-sm">Optional Step Functions</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
                   <span className="text-sm">Real-time Job Polling</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -246,11 +250,11 @@ export default function ProjectPage() {
                 </div>
                 <div className="text-sm">
                   <div className="font-medium text-gray-900">Infrastructure</div>
-                  <div className="text-gray-600">AWS CDK + S3 + Lambda</div>
+                  <div className="text-gray-600">Vercel Blob + Optional AWS</div>
                 </div>
                 <div className="text-sm">
-                  <div className="font-medium text-gray-900">Orchestration</div>
-                  <div className="text-gray-600">Step Functions</div>
+                  <div className="font-medium text-gray-900">Database</div>
+                  <div className="text-gray-600">Supabase PostgreSQL</div>
                 </div>
               </div>
             </div>
@@ -296,7 +300,7 @@ export default function ProjectPage() {
       <footer className="bg-white border-t mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center text-sm text-gray-500">
-            <p>Built with Turborepo monorepo architecture • AWS CDK • Next.js • Vercel Functions</p>
+            <p>Built with Turborepo monorepo • Vercel Blob Storage • Supabase PostgreSQL • Next.js</p>
           </div>
         </div>
       </footer>

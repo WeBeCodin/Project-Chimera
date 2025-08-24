@@ -22,40 +22,22 @@ This guide explains how to deploy and use the complete video upload flow with jo
 - Vercel account (for deployment)
 - PostgreSQL database (Vercel Postgres recommended)
 
-## Step 1: Infrastructure Deployment
+## Step 1: Database Setup (Supabase)
 
-Deploy the AWS CDK stack first:
+Set up a free PostgreSQL database:
 
 ```bash
-# Navigate to infrastructure directory
-cd infra
-
-# Install dependencies
-npm install
-
-# Configure AWS credentials
-export AWS_PROFILE=your-profile
-# OR
-export AWS_ACCESS_KEY_ID=your-key
-export AWS_SECRET_ACCESS_KEY=your-secret
-export AWS_DEFAULT_REGION=us-east-1
-
-# Bootstrap CDK (first time only)
-npx cdk bootstrap
-
-# Deploy the stack
-npx cdk deploy
+# 1. Create a Supabase account and project at https://supabase.com
+# 2. Go to Settings > Database and copy the connection string
+# 3. Configure your environment variables
 ```
 
-After deployment, note the outputs:
-- `VideoBucketName`: Your S3 bucket name
-- `VideoBucketArn`: S3 bucket ARN
-- `VideoProcessorLambdaArn`: Lambda function ARN
-- `StateMachineArn`: Step Functions ARN
+Note the database URL:
+- `DATABASE_URL`: Direct connection to Supabase PostgreSQL
 
 ## Step 2: Backend Configuration
 
-Configure the backend with database and AWS settings:
+Configure the backend with database and blob storage settings:
 
 ```bash
 # Navigate to backend directory
@@ -65,9 +47,9 @@ cd backend
 cp .env.example .env
 
 # Edit .env with your values:
-# - Database connection strings from Vercel
-# - AWS credentials and region
-# - S3 bucket name from CDK output
+# - Database connection string from Supabase
+# - Vercel Blob token
+# - NextAuth secret
 ```
 
 Install dependencies and set up database:
@@ -117,10 +99,11 @@ This starts:
 
 1. **Access the application**: Navigate to http://localhost:3000
 2. **Upload a video**: 
-   - Use drag-and-drop or file selection
+   - Use drag-and-drop or file selection  
+   - File uploads directly to Vercel Blob
    - Or input a video URL
 3. **Monitor job status**: Jobs appear in the status panel
-4. **Check AWS console**: See S3 uploads and Step Functions executions
+4. **Check storage**: Files are stored in Vercel Blob (check your Vercel dashboard)
 
 ## API Endpoints
 
@@ -138,20 +121,21 @@ This starts:
 
 ### Backend (.env)
 ```bash
-# Database
-POSTGRES_PRISMA_URL="your_postgres_url"
-POSTGRES_URL_NON_POOLING="your_direct_postgres_url"
+# Database (Supabase)
+DATABASE_URL="postgresql://postgres:[password]@[host]:5432/[database]"
 
 # Auth
 NEXTAUTH_SECRET="your_secret"
 NEXTAUTH_URL="http://localhost:3000"
 
-# AWS
-AWS_REGION="us-east-1"
-AWS_ACCESS_KEY_ID="your_key"
-AWS_SECRET_ACCESS_KEY="your_secret"
-AWS_ACCOUNT_ID="your_account"
-S3_BUCKET_NAME="chimera-videos-your_account"
+# Vercel Blob Storage  
+BLOB_READ_WRITE_TOKEN="your-vercel-blob-token"
+
+# Optional: AWS (for advanced processing)
+# AWS_REGION="us-east-1"
+# AWS_ACCESS_KEY_ID="your_key"
+# AWS_SECRET_ACCESS_KEY="your_secret"  
+# STEP_FUNCTIONS_ARN="your-step-functions-arn"
 ```
 
 ### Frontend (.env.local)
@@ -173,8 +157,13 @@ cd frontend
 vercel --prod
 ```
 
-### Infrastructure (AWS)
-Already deployed via CDK in Step 1.
+### Infrastructure (Optional AWS)
+AWS CDK infrastructure is now optional. Only deploy if you need advanced video processing workflows:
+
+```bash
+cd infra
+npx cdk deploy
+```
 
 ## Features
 

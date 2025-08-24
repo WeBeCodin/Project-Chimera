@@ -105,24 +105,21 @@ The Prisma schema includes:
 
 ### One-Click Deploy to Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FWeBeCodin%2FProject-Chimera&env=NEXTAUTH_SECRET,POSTGRES_PRISMA_URL,POSTGRES_URL_NON_POOLING,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,S3_BUCKET_NAME&envDescription=Environment%20variables%20needed%20for%20Project%20Chimera&envLink=https%3A%2F%2Fgithub.com%2FWeBeCodin%2FProject-Chimera%23environment-variables&project-name=project-chimera&repository-name=project-chimera)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FWeBeCodin%2FProject-Chimera&env=NEXTAUTH_SECRET,DATABASE_URL,BLOB_READ_WRITE_TOKEN&envDescription=Environment%20variables%20needed%20for%20Project%20Chimera&envLink=https%3A%2F%2Fgithub.com%2FWeBeCodin%2FProject-Chimera%23environment-variables&project-name=project-chimera&repository-name=project-chimera)
 
 ### Manual Deployment Steps
 
-1. **Deploy Infrastructure (AWS CDK)**
+1. **Set up Free Database (Supabase)**
 
-   ```bash
-   cd infra
-   npm install
-   npx cdk bootstrap
-   npx cdk deploy
-   ```
+   - Create a free account at [Supabase](https://supabase.com)
+   - Create a new project 
+   - Copy the database connection string
 
-2. **Set up Vercel Postgres Database**
+2. **Set up Vercel Blob Storage**
 
    - Create a new Vercel project
-   - Add Vercel Postgres to your project
-   - Copy the connection strings
+   - Add Vercel Blob to your project
+   - Get your blob read/write token
 
 3. **Deploy to Vercel**
 
@@ -132,33 +129,37 @@ The Prisma schema includes:
 
 4. **Configure Environment Variables**
    Set the following in your Vercel dashboard:
-   - `NEXTAUTH_SECRET` - Random secret for NextAuth.js
+   - `NEXTAUTH_SECRET` - Random secret for NextAuth.js  
    - `NEXTAUTH_URL` - Your production domain
-   - `POSTGRES_PRISMA_URL` - From Vercel Postgres
-   - `POSTGRES_URL_NON_POOLING` - From Vercel Postgres
+   - `DATABASE_URL` - From Supabase PostgreSQL
+   - `BLOB_READ_WRITE_TOKEN` - From Vercel Blob
+   
+   Optional (for advanced processing):
    - `AWS_REGION` - AWS region (e.g., us-east-1)
    - `AWS_ACCESS_KEY_ID` - AWS credentials
-   - `AWS_SECRET_ACCESS_KEY` - AWS credentials
-   - `S3_BUCKET_NAME` - From CDK deployment output
+   - `AWS_SECRET_ACCESS_KEY` - AWS credentials  
+   - `STEP_FUNCTIONS_ARN` - Step Functions ARN
 
 ## 🔧 Environment Variables
 
 ### Backend (.env)
 
 ```env
-# Database (from Vercel Postgres)
-POSTGRES_PRISMA_URL="postgresql://..."
-POSTGRES_URL_NON_POOLING="postgresql://..."
+# Database (Supabase PostgreSQL - free tier)
+DATABASE_URL="postgresql://postgres:[password]@[host]:5432/[database]"
 
 # Authentication
 NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="https://your-domain.vercel.app"
 
-# AWS Configuration
-AWS_REGION="us-east-1"
-AWS_ACCESS_KEY_ID="your-access-key"
-AWS_SECRET_ACCESS_KEY="your-secret-key"
-S3_BUCKET_NAME="chimera-videos-123456789012"
+# Vercel Blob Storage (for file uploads)
+BLOB_READ_WRITE_TOKEN="your-vercel-blob-token"
+
+# Optional: AWS Configuration (for advanced processing workflows)
+# AWS_REGION="us-east-1"
+# AWS_ACCESS_KEY_ID="your-access-key"
+# AWS_SECRET_ACCESS_KEY="your-secret-key"
+# STEP_FUNCTIONS_ARN="your-step-functions-arn"
 ```
 
 ### Frontend (.env.local)

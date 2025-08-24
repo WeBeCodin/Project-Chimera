@@ -16,13 +16,12 @@
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
+    "@vercel/blob": "^0.23.4",
     "@vercel/node": "^3.0.21",
-    "aws-sdk": "^2.1692.0",
     "next-auth": "^4.24.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
-    "@types/aws-sdk": "^0.0.42",
     "@types/node": "^20.0.0",
     "eslint": "^9.0.0",
     "prisma": "^5.20.0",

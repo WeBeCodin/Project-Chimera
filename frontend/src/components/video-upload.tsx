@@ -69,8 +69,8 @@ export function VideoUpload({ projectId, onUploadComplete, onError }: VideoUploa
     }
   }, [onError])
 
-  const uploadFileToS3 = async (file: File, uploadUrl: string) => {
-    return new Promise<void>((resolve, reject) => {
+  const uploadFileToBlob = async (file: File, blobKey: string) => {
+    return new Promise<string>((resolve, reject) => {
       const xhr = new XMLHttpRequest()
       
       xhr.upload.addEventListener('progress', (e) => {
@@ -86,7 +86,12 @@ export function VideoUpload({ projectId, onUploadComplete, onError }: VideoUploa
       
       xhr.addEventListener('load', () => {
         if (xhr.status === 200) {
-          resolve()
+          try {
+            const response = JSON.parse(xhr.responseText)
+            resolve(response.url)
+          } catch (error) {
+            reject(new Error('Invalid response from server'))
+          }
         } else {
           reject(new Error(`Upload failed with status: ${xhr.status}`))
         }
@@ -95,6 +100,9 @@ export function VideoUpload({ projectId, onUploadComplete, onError }: VideoUploa
       xhr.addEventListener('error', () => {
         reject(new Error('Upload failed'))
       })
+      
+      // Build the URL with query parameters for blob upload
+      const uploadUrl = `/api/videos/blob-upload?blobKey=${encodeURIComponent(blobKey)}&projectId=${encodeURIComponent(projectId)}&filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`
       
       xhr.open('PUT', uploadUrl)
       xhr.setRequestHeader('Content-Type', file.type)
@@ -109,10 +117,10 @@ export function VideoUpload({ projectId, onUploadComplete, onError }: VideoUploa
       setUploadProgress({
         percentage: 0,
         stage: 'requesting-url',
-        message: 'Requesting upload URL...'
+        message: 'Preparing upload...'
       })
 
-      // Step 1: Get pre-signed upload URL
+      // Step 1: Get blob upload info
       const uploadUrlResponse = await fetch('/api/videos/upload-url', {
         method: 'POST',
         headers: {
@@ -129,10 +137,10 @@ export function VideoUpload({ projectId, onUploadComplete, onError }: VideoUploa
         throw new Error('Failed to get upload URL')
       }
 
-      const { uploadUrl, s3Key, bucket } = await uploadUrlResponse.json()
+      const { blobKey } = await uploadUrlResponse.json()
 
-      // Step 2: Upload file to S3
-      await uploadFileToS3(selectedFile, uploadUrl)
+      // Step 2: Upload file to Vercel Blob
+      const blobUrl = await uploadFileToBlob(selectedFile, blobKey)
 
       setUploadProgress({
         percentage: 100,
@@ -147,8 +155,8 @@ export function VideoUpload({ projectId, onUploadComplete, onError }: VideoUploa
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          s3Key,
-          bucket,
+          blobUrl,
+          blobKey,
           projectId,
           filename: selectedFile.name,
           contentType: selectedFile.type,

@@ -21,14 +21,14 @@ npm run dev
 
 ## Database Setup
 
-1. Set up a Vercel Postgres database in your Vercel project
-2. Copy the connection strings to your `.env` file:
+1. Set up a Supabase PostgreSQL database in your Supabase project
+2. Copy the connection string to your `.env` file:
 
 ```env
-POSTGRES_PRISMA_URL="your_postgres_connection_string_with_pooling"
-POSTGRES_URL_NON_POOLING="your_postgres_direct_connection_string"
+DATABASE_URL="your_supabase_postgres_connection_string"
 NEXTAUTH_SECRET="your-nextauth-secret-key"
 NEXTAUTH_URL="your-domain-url"
+BLOB_READ_WRITE_TOKEN="your-vercel-blob-token"
 ```
 
 3. Push the database schema:
@@ -84,12 +84,12 @@ The Prisma schema includes:
 
 Create a `.env` file with:
 ```
-POSTGRES_PRISMA_URL="your_postgres_connection_string"
-POSTGRES_URL_NON_POOLING="your_postgres_direct_connection_string"
+DATABASE_URL="your_supabase_postgres_connection_string"
 NEXTAUTH_SECRET="your-secret-key-here"
 NEXTAUTH_URL="http://localhost:3000"
+BLOB_READ_WRITE_TOKEN="your-vercel-blob-token"
 ```
 
 ## Deployment
 
-Deploy to Vercel with Postgres database integration. The Prisma client will be automatically generated during deployment.
+Deploy to Vercel with Supabase PostgreSQL database integration. The Prisma client will be automatically generated during deployment.
