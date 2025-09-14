@@ -72,8 +72,8 @@ Get all videos for the authenticated user.
     {
       "id": "video_123",
       "filename": "sample-video.mp4",
-      "originalUrl": "https://example.com/video.mp4",
-      "s3Key": "videos/video_123.mp4",
+      "originalUrl": "https://xyz.public.blob.vercel-storage.com/uploads/...",
+      "blobKey": "uploads/proj_123/1234567890-abc123-sample-video.mp4",
       "projectId": "proj_123",
       "createdAt": "2024-01-15T10:00:00Z",
       "updatedAt": "2024-01-15T10:00:00Z"
@@ -83,7 +83,7 @@ Get all videos for the authenticated user.
 ```
 
 #### POST /api/videos/upload-url
-Get a pre-signed URL for uploading a video to S3.
+Get upload information for uploading a video to Vercel Blob.
 
 **Request Body:**
 ```json
@@ -97,9 +97,34 @@ Get a pre-signed URL for uploading a video to S3.
 **Response:**
 ```json
 {
-  "uploadUrl": "https://s3.amazonaws.com/bucket/signed-url",
-  "videoId": "video_123",
-  "s3Key": "videos/video_123.mp4"
+  "blobKey": "uploads/proj_123/1234567890-abc123-my-video.mp4",
+  "uploadEndpoint": "/api/videos/blob-upload",
+  "metadata": {
+    "projectId": "proj_123",
+    "filename": "my-video.mp4", 
+    "contentType": "video/mp4"
+  }
+}
+```
+
+#### PUT /api/videos/blob-upload
+Upload a video file directly to Vercel Blob.
+
+**Query Parameters:**
+- `blobKey`: The blob key from upload-url response
+- `projectId`: Project ID
+- `filename`: Original filename
+- `contentType`: File MIME type
+
+**Request Body:** Raw file data
+
+**Response:**
+```json
+{
+  "url": "https://xyz.public.blob.vercel-storage.com/uploads/proj_123/...",
+  "blobKey": "uploads/proj_123/1234567890-abc123-my-video.mp4",
+  "size": 1048576,
+  "contentType": "video/mp4"
 }
 ```
 
@@ -109,16 +134,30 @@ Mark a video upload as complete and trigger processing.
 **Request Body:**
 ```json
 {
-  "videoId": "video_123",
-  "s3Key": "videos/video_123.mp4"
+  "blobUrl": "https://xyz.public.blob.vercel-storage.com/uploads/...",
+  "blobKey": "uploads/proj_123/1234567890-abc123-my-video.mp4",
+  "projectId": "proj_123",
+  "filename": "my-video.mp4",
+  "contentType": "video/mp4",
+  "size": 1048576
 }
 ```
 
 **Response:**
 ```json
 {
-  "success": true,
-  "jobId": "job_456"
+  "video": {
+    "id": "video_123",
+    "filename": "my-video.mp4",
+    "originalUrl": "https://xyz.public.blob.vercel-storage.com/uploads/..."
+  },
+  "jobs": [
+    {
+      "id": "job_456",
+      "type": "transcription",
+      "status": "PENDING"
+    }
+  ]
 }
 ```
 
