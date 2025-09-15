@@ -63,7 +63,7 @@ export default function VideoEditor({ params }: VideoEditorProps) {
         originalFilename: 'sample-video.mp4',
         originalSizeBytes: 50 * 1024 * 1024, // 50MB
         originalFormat: 'video/mp4',
-        sourceUrl: '/demo-video.mp4', // Demo video URL
+        sourceUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', // Demo video URL
         durationSeconds: 60,
         width: 1920,
         height: 1080,
