@@ -6,8 +6,8 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from './schema';
 
-// Import postgres using require to avoid ES module issues
-const postgres = require('postgres');
+// Import postgres using ES module import
+import postgres from 'postgres';
 
 // Supabase connection
 const connectionString = process.env.DATABASE_URL!;
