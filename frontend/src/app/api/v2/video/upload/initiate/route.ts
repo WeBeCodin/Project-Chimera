@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { createId } from '@paralleldrive/cuid2';
 import type { UploadInitiateRequest, UploadInitiateResponse } from '@/lib/video/types';
+import { db, videoProjects } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,8 +29,7 @@ export async function POST(request: NextRequest) {
     // Create video project record in database
     const project = await createVideoProject({
       id: projectId,
-      workspaceId: body.metadata.workspaceId,
-      userId: getUserIdFromRequest(request), // Extract from auth
+      userId: getUserIdFromRequest(request),
       title: body.metadata.title,
       description: body.metadata.description,
       originalFilename: body.fileName,
@@ -117,20 +117,39 @@ function validateUploadRequest(body: UploadInitiateRequest): { valid: boolean; e
   };
 }
 
-// Mock function - replace with actual database integration
-async function createVideoProject(data: any) {
-  // In a real implementation, this would use Supabase or another database
-  console.log('Creating video project:', data);
-  return {
-    id: data.id,
-    ...data,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
+// Database integration - create video project record
+async function createVideoProject(data: {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  originalFilename: string;
+  originalSizeBytes: number;
+  originalFormat: string;
+  status: string;
+}) {
+  try {
+    const [project] = await db.insert(videoProjects).values({
+      id: data.id,
+      userId: data.userId,
+      title: data.title,
+      description: data.description,
+      originalFilename: data.originalFilename,
+      originalSizeBytes: data.originalSizeBytes,
+      originalFormat: data.originalFormat,
+      status: data.status as any,
+    }).returning();
+
+    return project;
+  } catch (error) {
+    console.error('Failed to create video project:', error);
+    throw new Error('Database error: Failed to create video project');
+  }
 }
 
 // Mock function - replace with actual auth integration
 function getUserIdFromRequest(request: NextRequest): string {
   // In a real implementation, this would extract the user ID from JWT/session
+  // For now, return a mock user ID
   return 'user_' + createId();
 }

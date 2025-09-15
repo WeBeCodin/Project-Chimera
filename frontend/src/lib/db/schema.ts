@@ -150,6 +150,162 @@ export const verificationTokens = pgTable('verification_tokens', {
   })
 }));
 
+// Video Projects for video editing platform
+export const videoProjects = pgTable('video_projects', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  status: varchar('status', { length: 50 }).default('uploading').notNull(), // uploading, processing, ready, error
+  
+  // Original file info
+  originalFilename: varchar('original_filename', { length: 255 }),
+  originalSizeBytes: integer('original_size_bytes'),
+  originalFormat: varchar('original_format', { length: 50 }),
+  
+  // Processed versions
+  sourceUrl: text('source_url'), // Original in Vercel Blob
+  proxyUrl: text('proxy_url'), // Low-res editing proxy
+  previewUrl: text('preview_url'), // Web-optimized preview
+  
+  // Video metadata
+  durationSeconds: integer('duration_seconds'),
+  width: integer('width'),
+  height: integer('height'),
+  fps: integer('fps'),
+  bitrate: integer('bitrate'),
+  codec: varchar('codec', { length: 50 }),
+  
+  // Processing metadata
+  processingStartedAt: timestamp('processing_started_at'),
+  processingCompletedAt: timestamp('processing_completed_at'),
+  processingError: text('processing_error'),
+  
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+}, (table) => ({
+  userIdIdx: index('video_projects_user_id_idx').on(table.userId),
+  statusIdx: index('video_projects_status_idx').on(table.status),
+  createdAtIdx: index('video_projects_created_at_idx').on(table.createdAt)
+}));
+
+// Video Scenes (auto-detected)
+export const videoScenes = pgTable('video_scenes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').references(() => videoProjects.id, { onDelete: 'cascade' }).notNull(),
+  sceneIndex: integer('scene_index').notNull(),
+  startTime: integer('start_time').notNull(), // milliseconds
+  endTime: integer('end_time').notNull(), // milliseconds
+  
+  // Scene analysis
+  dominantColor: varchar('dominant_color', { length: 7 }), // hex color
+  brightnessLevel: integer('brightness_level'), // 0-100
+  motionIntensity: integer('motion_intensity'), // 0-100
+  
+  // AI-generated
+  description: text('description'),
+  detectedObjects: jsonb('detected_objects'),
+  detectedFaces: jsonb('detected_faces'),
+  
+  // Thumbnail
+  thumbnailUrl: text('thumbnail_url'),
+  keyframeUrl: text('keyframe_url'),
+  
+  createdAt: timestamp('created_at').defaultNow().notNull()
+}, (table) => ({
+  projectIdIdx: index('video_scenes_project_id_idx').on(table.projectId),
+  projectSceneIdx: index('video_scenes_project_scene_idx').on(table.projectId, table.sceneIndex)
+}));
+
+// Video Transcriptions
+export const videoTranscriptions = pgTable('video_transcriptions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').references(() => videoProjects.id, { onDelete: 'cascade' }).notNull(),
+  language: varchar('language', { length: 10 }).default('en').notNull(),
+  
+  // Transcript segments as JSONB array
+  segments: jsonb('segments').notNull(), // Array of {text, start, end, confidence}
+  fullText: text('full_text'), // Complete transcript for search
+  
+  // AI processing
+  modelUsed: varchar('model_used', { length: 100 }).default('whisper'),
+  processingTimeMs: integer('processing_time_ms'),
+  confidenceAvg: integer('confidence_avg'), // 0-100
+  
+  createdAt: timestamp('created_at').defaultNow().notNull()
+}, (table) => ({
+  projectIdIdx: index('video_transcriptions_project_id_idx').on(table.projectId)
+}));
+
+// Timeline Projects (extends video_projects)
+export const timelineProjects = pgTable('timeline_projects', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  videoProjectId: uuid('video_project_id').references(() => videoProjects.id, { onDelete: 'cascade' }).notNull(),
+  timelineData: jsonb('timeline_data').notNull(), // Complete timeline state
+  version: integer('version').default(1).notNull(),
+  
+  // Export settings
+  exportSettings: jsonb('export_settings'),
+  lastExportUrl: text('last_export_url'),
+  lastExportAt: timestamp('last_export_at'),
+  
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+}, (table) => ({
+  videoProjectIdIdx: index('timeline_projects_video_project_id_idx').on(table.videoProjectId)
+}));
+
+// Processing Jobs
+export const processingJobs = pgTable('processing_jobs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').references(() => videoProjects.id, { onDelete: 'cascade' }).notNull(),
+  jobType: varchar('job_type', { length: 50 }).notNull(), // upload, transcode, analyze, export
+  status: varchar('status', { length: 50 }).default('pending').notNull(), // pending, processing, completed, failed
+  
+  // Job details
+  inputData: jsonb('input_data'),
+  outputData: jsonb('output_data'),
+  errorMessage: text('error_message'),
+  
+  // Metrics
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+  durationMs: integer('duration_ms'),
+  
+  createdAt: timestamp('created_at').defaultNow().notNull()
+}, (table) => ({
+  projectStatusIdx: index('processing_jobs_project_status_idx').on(table.projectId, table.status),
+  jobTypeIdx: index('processing_jobs_job_type_idx').on(table.jobType)
+}));
+
+// Export Jobs
+export const exportJobs = pgTable('export_jobs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').references(() => timelineProjects.id, { onDelete: 'cascade' }).notNull(),
+  status: varchar('status', { length: 50 }).default('pending').notNull(), // pending, processing, completed, failed
+  
+  // Export configuration
+  format: varchar('format', { length: 20 }).notNull(),
+  quality: varchar('quality', { length: 20 }).notNull(),
+  bitrate: integer('bitrate'),
+  frameRate: integer('frame_rate'),
+  
+  // Output
+  outputUrl: text('output_url'),
+  fileSizeBytes: integer('file_size_bytes'),
+  
+  // Processing metrics
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+  progressPercent: integer('progress_percent').default(0).notNull(),
+  errorMessage: text('error_message'),
+  
+  createdAt: timestamp('created_at').defaultNow().notNull()
+}, (table) => ({
+  projectIdIdx: index('export_jobs_project_id_idx').on(table.projectId),
+  statusIdx: index('export_jobs_status_idx').on(table.status)
+}));
+
 // Type exports for use in application
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -163,3 +319,17 @@ export type RateLimit = typeof rateLimits.$inferSelect;
 export type NewRateLimit = typeof rateLimits.$inferInsert;
 export type SystemConfig = typeof systemConfig.$inferSelect;
 export type NewSystemConfig = typeof systemConfig.$inferInsert;
+
+// Video-related type exports
+export type VideoProject = typeof videoProjects.$inferSelect;
+export type NewVideoProject = typeof videoProjects.$inferInsert;
+export type VideoScene = typeof videoScenes.$inferSelect;
+export type NewVideoScene = typeof videoScenes.$inferInsert;
+export type VideoTranscription = typeof videoTranscriptions.$inferSelect;
+export type NewVideoTranscription = typeof videoTranscriptions.$inferInsert;
+export type TimelineProject = typeof timelineProjects.$inferSelect;
+export type NewTimelineProject = typeof timelineProjects.$inferInsert;
+export type ProcessingJob = typeof processingJobs.$inferSelect;
+export type NewProcessingJob = typeof processingJobs.$inferInsert;
+export type ExportJob = typeof exportJobs.$inferSelect;
+export type NewExportJob = typeof exportJobs.$inferInsert;
