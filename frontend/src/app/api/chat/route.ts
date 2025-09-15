@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prepare messages array (simplified for now)
+    // Prepare messages array in the format expected by AI SDK
     const messages = [
       { role: 'user' as const, content: message }
     ];
