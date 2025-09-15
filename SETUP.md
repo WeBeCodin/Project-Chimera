@@ -4,7 +4,8 @@
 
 This guide explains how to set up and use the complete backend and database system for Project Chimera. The implementation includes:
 
-- ✅ **Vercel Postgres Database** integration with Prisma ORM
+- ✅ **Free Database Integration** with Supabase PostgreSQL or Vercel Postgres
+- ✅ **Vercel Blob Storage** for video file uploads (replaces S3)
 - ✅ **Complete API Endpoints** for all core functionality  
 - ✅ **NextAuth.js Authentication** (placeholder implementation)
 - ✅ **Video Processing Pipeline** with automatic job creation
@@ -14,6 +15,19 @@ This guide explains how to set up and use the complete backend and database syst
 
 ### 1. Database Setup
 
+**Option A: Supabase PostgreSQL (Recommended for free tier)**
+1. Create a free Supabase project at [supabase.com](https://supabase.com)
+2. Go to Settings → Database and copy the connection string
+3. Add to `backend/.env`:
+
+```env
+DATABASE_URL="postgresql://postgres:[password]@[host]:5432/[database]"
+NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_URL="https://your-domain.com"
+BLOB_READ_WRITE_TOKEN="your-vercel-blob-token"
+```
+
+**Option B: Vercel Postgres**
 1. Create a Vercel Postgres database in your project dashboard
 2. Copy the connection strings to `backend/.env`:
 
@@ -22,9 +36,15 @@ POSTGRES_PRISMA_URL="postgresql://username:password@host/db?pgbouncer=true"
 POSTGRES_URL_NON_POOLING="postgresql://username:password@host/db"
 NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="https://your-domain.com"
+BLOB_READ_WRITE_TOKEN="your-vercel-blob-token"
 ```
 
-### 2. Deploy to Vercel
+### 2. Vercel Blob Setup
+
+1. In your Vercel dashboard, go to Storage → Create → Blob
+2. Copy the `BLOB_READ_WRITE_TOKEN` to your environment variables
+
+### 3. Deploy to Vercel
 
 ```bash
 # Push database schema
@@ -35,7 +55,7 @@ npm run prisma:push
 vercel --prod
 ```
 
-### 3. Test the System
+### 4. Test the System
 
 ```bash
 # Test database connection
@@ -160,19 +180,21 @@ enum JobStatus {
 ## Deployment Architecture
 
 ```
-Frontend (Next.js) → API Routes (Vercel Functions) → Prisma → PostgreSQL
+Frontend (Next.js) → API Routes (Vercel Functions) → Prisma → PostgreSQL (Supabase/Vercel)
                               ↓
-                         AWS Lambda (Processing)
+                         Vercel Blob (Video Storage)
                               ↓
-                         S3 (Video Storage)
+                         Optional: AWS Lambda (Advanced Processing)
 ```
 
 ## Job Processing Flow
 
-1. **Video Upload** → Creates video record + transcription job
+1. **Video Upload** → Upload to Vercel Blob → Creates video record + analysis jobs
 2. **Job Status Polling** → Frontend monitors job progress
-3. **AWS Processing** → Lambda functions update job status/results
+3. **Optional Processing** → AWS Lambda functions (if configured) update job status/results
 4. **Results Storage** → Job results stored in database
+
+**Note**: AWS processing is optional - the system works with just Vercel Blob storage for basic video management.
 
 ## Security Notes
 

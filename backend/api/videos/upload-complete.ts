@@ -1,31 +1,63 @@
 import { type VercelRequest, type VercelResponse } from '@vercel/node'
 import { PrismaClient } from '../../types/prisma'
-import AWS from 'aws-sdk'
 
 const prisma = new PrismaClient()
 
-// Configure AWS SDK
-const stepfunctions = new AWS.StepFunctions({
-  region: process.env.AWS_REGION || 'us-east-1',
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-})
+// Configure AWS SDK only if credentials are available
+let stepfunctions: any = null
+if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+  const AWS = require('aws-sdk')
+  stepfunctions = new AWS.StepFunctions({
+    region: process.env.AWS_REGION || 'us-east-1',
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  })
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'POST') {
     try {
-      const { s3Key, bucket, projectId, filename, contentType, size } = req.body
+      // Support both new Vercel Blob format and legacy S3 format
+      const { 
+        blobUrl, 
+        blobPath, 
+        projectId, 
+        filename, 
+        contentType, 
+        size,
+        // Legacy S3 fields for backward compatibility
+        s3Key,
+        bucket 
+      } = req.body
       
-      // Validate required fields
-      if (!s3Key || !bucket || !projectId || !filename) {
+      // Validate required fields (support both formats)
+      if (!projectId || !filename) {
         return res.status(400).json({ 
-          error: 'Missing required fields: s3Key, bucket, projectId, filename' 
+          error: 'Missing required fields: projectId, filename' 
+        })
+      }
+
+      if (!blobUrl && !s3Key) {
+        return res.status(400).json({ 
+          error: 'Missing file location: either blobUrl or s3Key is required' 
         })
       }
       
-      // Create the video record with S3 information
-      const originalUrl = `https://${bucket}.s3.amazonaws.com/${s3Key}`
+      // Determine the original URL based on available data
+      let originalUrl: string
+      if (blobUrl) {
+        // Using Vercel Blob
+        originalUrl = blobUrl
+      } else if (s3Key && bucket) {
+        // Legacy S3 format
+        originalUrl = `https://${bucket}.s3.amazonaws.com/${s3Key}`
+      } else {
+        return res.status(400).json({ 
+          error: 'Invalid file location data provided' 
+        })
+      }
       
+      // Create the video record with file information
       const video = await prisma.video.create({
         data: {
           filename,
@@ -49,8 +81,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             metadata: {
               videoFilename: filename,
               originalUrl,
-              s3Key,
-              bucket,
+              // Include both formats for compatibility
+              ...(blobUrl && { blobUrl, blobPath }),
+              ...(s3Key && { s3Key, bucket }),
               contentType,
               size,
               uploadedAt: new Date().toISOString(),
@@ -60,17 +93,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         jobs.push(job)
       }
 
-      // Trigger Step Functions workflow for all analysis tasks
+      // Trigger Step Functions workflow for all analysis tasks (only if configured)
       try {
         const stateMachineArn = process.env.STEP_FUNCTIONS_ARN
         
-        if (stateMachineArn) {
+        if (stateMachineArn && stepfunctions) {
           const stepFunctionInput = {
             videoId: video.id,
             projectId,
-            s3Key,
-            bucket,
+            originalUrl,
             filename,
+            // Include both formats for legacy compatibility
+            ...(blobUrl && { blobUrl, blobPath }),
+            ...(s3Key && { s3Key, bucket }),
             jobs: jobs.map(job => ({ jobId: job.id, type: job.type })),
             videoDuration: size ? Math.floor(size / 1000000) * 10 : 120, // Rough estimate
           }
@@ -99,7 +134,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             })
           ))
         } else {
-          console.warn('STEP_FUNCTIONS_ARN not configured, skipping Step Functions trigger')
+          console.log('Step Functions not configured or AWS SDK not available - jobs will remain in PENDING status')
         }
       } catch (stepFunctionError) {
         console.error('Error triggering Step Functions:', stepFunctionError)

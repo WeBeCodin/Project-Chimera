@@ -79,15 +79,25 @@ In your Vercel dashboard, go to Settings → Environment Variables and add:
 NEXTAUTH_SECRET=your-random-secret-key-generate-with-openssl-rand-base64-32
 NEXTAUTH_URL=https://your-project-name.vercel.app
 
-# Database (from Vercel Postgres setup)
+# Database - Option A: Supabase PostgreSQL (Free Tier Recommended)
+DATABASE_URL=postgresql://postgres:password@host:5432/database
+
+# Database - Option B: Vercel Postgres
 POSTGRES_PRISMA_URL=postgresql://username:password@host/db?pgbouncer=true
 POSTGRES_URL_NON_POOLING=postgresql://username:password@host/db
 
-# AWS Configuration (from CDK deployment)
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your-aws-access-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret-key
-S3_BUCKET_NAME=chimera-videos-your-account-id
+# Vercel Blob Storage (replaces S3)
+BLOB_READ_WRITE_TOKEN=your-vercel-blob-token
+
+# AWS Configuration (Optional - for advanced processing workflows only)
+# Only needed if you want to use AWS Step Functions for video analysis
+# AWS_REGION=us-east-1
+# AWS_ACCESS_KEY_ID=your-aws-access-key
+# AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+# STEP_FUNCTIONS_ARN=arn:aws:states:region:account:stateMachine:name
+
+# Legacy S3 Configuration (Optional - can be removed)
+# S3_BUCKET_NAME=chimera-videos-your-account-id
 
 # Optional: Analytics and monitoring
 NEXT_PUBLIC_VERCEL_ANALYTICS_ID=your-analytics-id
@@ -101,6 +111,12 @@ openssl rand -base64 32
 # Or use Node.js
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
+
+### 3.3 Get Vercel Blob Token
+1. Go to your Vercel dashboard
+2. Navigate to Storage → Create → Blob
+3. Create a new blob store
+4. Copy the `BLOB_READ_WRITE_TOKEN`
 
 ## Step 4: Database Migration
 
