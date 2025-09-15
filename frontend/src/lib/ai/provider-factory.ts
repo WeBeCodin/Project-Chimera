@@ -1,9 +1,9 @@
 /**
- * AI Provider Factory
+ * AI Provider Factory - Enhanced with Vercel AI Gateway
  * Supercharger Manifesto v3.0 Compliant
  * 
  * Intelligent model selection and fallback system for multi-provider AI architecture.
- * Free tier only: Groq (primary), Google Gemini (fallback).
+ * Enhanced with AI Gateway integration, workspace support, and advanced observability.
  */
 
 import { streamText } from 'ai';
@@ -15,8 +15,16 @@ import type {
   StreamingResponse,
   AIError,
   ModelFactoryOptions,
-  TaskComplexity
+  TaskComplexity,
+  ChimeraMetadata,
+  ChimeraDataPart
 } from './chimera-types';
+import { 
+  getAIGatewayConfig, 
+  getRateLimitForTier, 
+  calculateCost,
+  getModelPreset
+} from './gateway-config';
 
 // Model Configurations (Free Tier Only)
 const MODEL_CONFIGS: ModelConfig[] = [
@@ -52,7 +60,7 @@ const MODEL_CONFIGS: ModelConfig[] = [
   // Google Gemini Models (Fallback)
   {
     id: 'gemini-1.5-flash',
-    provider: 'google-gemini',
+    provider: 'google',
     name: 'Gemini 1.5 Flash',
     capabilities: {
       reasoning: true,
@@ -134,9 +142,9 @@ class ModelFactory {
     messages: ChimeraMessage[]
   ): Promise<StreamingResponse> {
     try {
-      // Convert ChimeraMessage to CoreMessage format (simple string content)
+      // Convert ChimeraMessage to proper format for AI SDK
       const coreMessages = messages.map(msg => ({
-        role: msg.role,
+        role: msg.role as 'user' | 'assistant' | 'system',
         content: msg.content
       }));
 
@@ -146,8 +154,7 @@ class ModelFactory {
       // Stream text (mandatory for UI interactions)
       const result = await streamText({
         model: modelInstance,
-        messages: coreMessages,
-        maxTokens: model.capabilities.maxTokens
+        messages: coreMessages
       });
 
       // Convert to our streaming response format
@@ -208,7 +215,7 @@ class ModelFactory {
         const { groq } = await import('@ai-sdk/groq');
         return groq(model.id);
         
-      case 'google-gemini':
+      case 'google':
         // Import Google provider dynamically
         const { google } = await import('@ai-sdk/google');
         return google(model.id);
