@@ -205,18 +205,12 @@ class ModelFactory {
     switch (model.provider) {
       case 'groq':
         // Import Groq provider dynamically
-        const { createGroq } = await import('@ai-sdk/groq');
-        const groq = createGroq({
-          apiKey: process.env.GROQ_API_KEY
-        });
+        const { groq } = await import('@ai-sdk/groq');
         return groq(model.id);
         
       case 'google-gemini':
         // Import Google provider dynamically
-        const { createGoogleGenerativeAI } = await import('@ai-sdk/google');
-        const google = createGoogleGenerativeAI({
-          apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
-        });
+        const { google } = await import('@ai-sdk/google');
         return google(model.id);
         
       default:
