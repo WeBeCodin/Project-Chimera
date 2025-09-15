@@ -14,6 +14,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.17",
     "@ai-sdk/google": "^2.0.14",
     "@ai-sdk/groq": "^2.0.19",
     "@ai-sdk/react": "^2.0.44",
