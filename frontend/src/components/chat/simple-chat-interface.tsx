@@ -1,65 +1,120 @@
 /**
- * Streaming Chat Interface - Supercharger Manifesto v3.0 Compliant
- * 
- * Implements streaming-first chat interface per specs/features/ai-chat.spec.md
- * Uses Vercel AI SDK React hooks for seamless streaming
+ * Simple Chat Component - Manual Implementation
+ * Testing streaming functionality without useChat hook dependency
  */
 
 'use client';
 
-import { useChat } from '@ai-sdk/react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
-export interface StreamingInterfaceProps {
-  conversationId?: string;
-  initialMessages?: Array<{
-    id: string;
-    role: 'user' | 'assistant' | 'system';
-    content: string;
-  }>;
-  onNewConversation?: (id: string) => void;
-  tools?: string[];
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
 }
 
-export function StreamingInterface({
-  conversationId,
-  initialMessages = [],
-  onNewConversation,
-  tools = []
-}: StreamingInterfaceProps) {
-  const [model, setModel] = useState<'auto' | 'groq-llama-70b' | 'groq-llama-8b' | 'gemini-flash'>('auto');
+export function SimpleChatInterface() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    error
-  } = useChat({
-    api: '/api/chat',
-    body: {
-      conversationId,
-      model,
-      tools,
-      context: {
-        ragEnabled: false,
-        maxTokens: 4096,
-        temperature: 0.7
-      }
-    },
-    onFinish: (message) => {
-      console.log('Message completed:', message);
-    },
-    onError: (error) => {
-      console.error('Chat error:', error);
-    }
-  });
-
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim() && !isLoading) {
-      handleSubmit(e);
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: input.trim(),
+      timestamp: new Date()
+    };
+
+    const currentInput = input.trim();
+    setInput('');
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+    setError(null);
+
+    // Create abort controller for this request
+    abortControllerRef.current = new AbortController();
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: currentInput,
+          model: 'auto',
+          context: {
+            temperature: 0.7,
+            maxTokens: 2000
+          }
+        }),
+        signal: abortControllerRef.current.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      // Create assistant message placeholder
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: '',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+
+      // Stream the response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        
+        // Update the assistant message content
+        setMessages(prev => prev.map(msg => 
+          msg.id === assistantMessage.id 
+            ? { ...msg, content: msg.content + chunk }
+            : msg
+        ));
+      }
+
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Request aborted');
+        return;
+      }
+      
+      console.error('Chat error:', error);
+      setError(error.message || 'An error occurred while processing your request');
+      
+      // Remove the loading assistant message if it exists
+      setMessages(prev => prev.filter(msg => msg.content !== ''));
+      
+    } finally {
+      setIsLoading(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
   };
 
@@ -68,18 +123,8 @@ export function StreamingInterface({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-white">
         <h1 className="text-xl font-semibold text-gray-900">Project Chimera AI Chat</h1>
-        <div className="flex items-center space-x-2">
-          <select
-            value={model}
-            onChange={(e) => setModel(e.target.value as typeof model)}
-            className="px-3 py-1 text-sm border rounded-md bg-white"
-            disabled={isLoading}
-          >
-            <option value="auto">Auto Select</option>
-            <option value="groq-llama-70b">Llama 3.1 70B (Groq)</option>
-            <option value="groq-llama-8b">Llama 3.1 8B (Groq)</option>
-            <option value="gemini-flash">Gemini 1.5 Flash</option>
-          </select>
+        <div className="text-sm text-green-600 font-medium">
+          ✓ Ready
         </div>
       </div>
 
@@ -111,11 +156,11 @@ export function StreamingInterface({
                   : 'bg-white text-gray-900 shadow-sm border'
               }`}>
                 <div className="whitespace-pre-wrap">
-                  {message.content}
+                  {message.content || (isLoading && message.role === 'assistant' ? 'Thinking...' : '')}
                 </div>
-                {message.role === 'assistant' && (
+                {message.role === 'assistant' && message.content && (
                   <div className="text-xs text-gray-500 mt-2">
-                    AI • {model === 'auto' ? 'Auto' : model}
+                    AI • Auto Selected
                   </div>
                 )}
               </div>
@@ -143,18 +188,21 @@ export function StreamingInterface({
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-md m-4">
           <p className="text-red-700 text-sm">
-            {error.message || 'An error occurred. Please check your API keys and try again.'}
+            {error}
+          </p>
+          <p className="text-red-600 text-xs mt-1">
+            Tip: Make sure GROQ_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY is set
           </p>
         </div>
       )}
 
       {/* Input Form */}
       <div className="border-t p-4 bg-white">
-        <form onSubmit={handleFormSubmit} className="flex space-x-2">
+        <form onSubmit={handleSubmit} className="flex space-x-2">
           <input
             type="text"
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message..."
             className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             disabled={isLoading}
@@ -169,7 +217,7 @@ export function StreamingInterface({
         </form>
         
         <div className="mt-2 text-xs text-gray-500 flex items-center justify-between">
-          <span>Using {model === 'auto' ? 'Auto Selection' : model}</span>
+          <span>Simple streaming chat implementation</span>
           {messages.length > 0 && (
             <span>{messages.length} messages</span>
           )}

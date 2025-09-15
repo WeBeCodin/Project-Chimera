@@ -5,13 +5,13 @@
  * Main chat interface implementing streaming-first AI interactions
  */
 
-import { StreamingInterface } from '@/components/chat/streaming-interface';
+import { SimpleChatInterface } from '@/components/chat/simple-chat-interface';
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="container mx-auto h-screen flex flex-col">
-        <StreamingInterface />
+        <SimpleChatInterface />
       </div>
     </main>
   );
