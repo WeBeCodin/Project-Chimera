@@ -144,7 +144,7 @@ export function getAIGatewayConfig(): AIGatewayConfig {
     baseURL: process.env.VERCEL_AI_GATEWAY_URL || aiGatewayConfig.baseURL,
     observability: {
       ...aiGatewayConfig.observability,
-      logLevel: (process.env.AI_GATEWAY_LOG_LEVEL as any) || aiGatewayConfig.observability.logLevel,
+      logLevel: (process.env.AI_GATEWAY_LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || aiGatewayConfig.observability.logLevel,
     }
   };
 }
