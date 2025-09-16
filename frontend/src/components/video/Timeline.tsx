@@ -131,7 +131,7 @@ export function Timeline({
     ctx.fillRect(8, y + 5, 4, 4);
   }, [trackHeight, rulerHeight]);
 
-  // Draw clip
+  // Draw clip with thumbnail preview
   const drawClip = useCallback((ctx: CanvasRenderingContext2D, clip: Clip, track: Track, trackIndex: number) => {
     const x = timeToPixel(clip.startTime);
     const width = timeToPixel(clip.duration);
@@ -143,7 +143,8 @@ export function Timeline({
 
     // Clip background
     const isSelected = selectedClips.includes(clip.id);
-    ctx.fillStyle = isSelected ? '#3b82f6' : '#059669';
+    const clipColor = track.type === 'video' ? '#059669' : '#0d9488'; // Green for video, teal for audio
+    ctx.fillStyle = isSelected ? '#3b82f6' : clipColor;
     ctx.fillRect(x, y, width, height);
 
     // Clip border
@@ -151,15 +152,48 @@ export function Timeline({
     ctx.lineWidth = 2;
     ctx.strokeRect(x, y, width, height);
 
+    // Draw thumbnail strip for video clips (if wide enough)
+    if (track.type === 'video' && width > 120) {
+      // This would show thumbnails from the timeline thumbnails data
+      // For now, just add a visual indicator for video content
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.fillRect(x + 2, y + 2, Math.min(width - 4, 60), Math.min(height - 4, 32));
+      
+      // Film strip pattern
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      for (let i = 0; i < Math.min(3, Math.floor(width / 20)); i++) {
+        ctx.fillRect(x + 4 + (i * 18), y + 4, 16, 3);
+        ctx.fillRect(x + 4 + (i * 18), y + height - 10, 16, 3);
+      }
+    }
+
+    // Audio waveform visualization for audio clips
+    if (track.type === 'audio' && width > 60) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      
+      const centerY = y + height / 2;
+      const waveformWidth = Math.min(width - 8, 200);
+      
+      for (let i = 0; i < waveformWidth; i += 2) {
+        const amplitude = (Math.sin((i / waveformWidth) * Math.PI * 8) + Math.sin((i / waveformWidth) * Math.PI * 3)) * (height * 0.15);
+        ctx.moveTo(x + 4 + i, centerY);
+        ctx.lineTo(x + 4 + i, centerY + amplitude);
+      }
+      ctx.stroke();
+    }
+
     // Clip label
-    if (width > 60) { // Only show label if clip is wide enough
+    if (width > 80) { // Only show label if clip is wide enough
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px system-ui';
       ctx.textAlign = 'left';
       
       // Truncate long names
-      let clipName = clip.assetId.substring(0, 12);
-      if (clip.assetId.length > 12) clipName += '...';
+      let clipName = clip.assetId.includes('-') ? clip.assetId.split('-')[0] : clip.assetId;
+      clipName = clipName.substring(0, 10);
+      if (clip.assetId.length > 10) clipName += '...';
       
       ctx.fillText(clipName, x + 4, y + 15);
       
@@ -170,11 +204,31 @@ export function Timeline({
       ctx.fillText(duration, x + 4, y + height - 5);
     }
 
+    // Volume indicator for audio clips
+    if (track.type === 'audio' && width > 40) {
+      const volumeWidth = 30;
+      const volumeX = x + width - volumeWidth - 4;
+      const volumeY = y + 4;
+      
+      // Volume background
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.fillRect(volumeX, volumeY, volumeWidth, 8);
+      
+      // Volume level
+      ctx.fillStyle = '#10b981';
+      ctx.fillRect(volumeX + 1, volumeY + 1, (volumeWidth - 2) * clip.volume, 6);
+    }
+
     // Trim handles
     if (isSelected && width > 20) {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(x, y, 3, height); // Left handle
       ctx.fillRect(x + width - 3, y, 3, height); // Right handle
+      
+      // Handle indicators
+      ctx.fillStyle = '#1d4ed8';
+      ctx.fillRect(x, y + height/2 - 2, 3, 4);
+      ctx.fillRect(x + width - 3, y + height/2 - 2, 3, 4);
     }
   }, [timeToPixel, trackHeight, rulerHeight, selectedClips]);
 

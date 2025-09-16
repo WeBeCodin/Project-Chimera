@@ -224,13 +224,58 @@ export function VideoUpload({ workspaceId, onUploadComplete, onUploadError }: Vi
         }));
       }
 
-      // Step 3: Upload completed, processing will begin
+      // Step 3: Process video and generate thumbnails
       setUploadState(prev => ({
         ...prev,
         status: 'processing',
         progress: 100,
-        message: 'Upload complete! Processing video...'
+        message: 'Processing video and generating thumbnails...'
       }));
+
+      try {
+        // Generate thumbnail strip for timeline
+        const thumbnails = await videoProcessor.generateThumbnailStrip(selectedFile, 10);
+        
+        // Upload thumbnails to Vercel Blob
+        setUploadState(prev => ({
+          ...prev,
+          message: 'Uploading thumbnails...'
+        }));
+        
+        const thumbnailUrls = await Promise.all(
+          thumbnails.map(async (thumb, index) => {
+            const formData = new FormData();
+            formData.append('file', thumb.blob, `thumb_${index}.jpg`);
+            
+            const response = await fetch('/api/v2/video/upload/thumbnail', {
+              method: 'POST',
+              body: formData
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed to upload thumbnail ${index}`);
+            }
+            
+            const result = await response.json();
+            return { timestamp: thumb.timestamp, url: result.url };
+          })
+        );
+        
+        // Update project with thumbnails and metadata
+        await fetch(`/api/v2/video/projects/${project.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            thumbnails: thumbnailUrls,
+            metadata: uploadState.metadata,
+            status: 'ready'
+          })
+        });
+        
+      } catch (processingError) {
+        console.warn('Video processing failed, but upload succeeded:', processingError);
+        // Don't fail the entire upload if processing fails
+      }
 
       // Wait a moment then mark as completed
       setTimeout(() => {
