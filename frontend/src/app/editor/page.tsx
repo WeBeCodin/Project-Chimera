@@ -6,7 +6,7 @@
 'use client';
 
 import { useState } from 'react';
-import { VideoUpload } from '@/components/video/VideoUpload';
+import { VideoUpload } from '@/components/video/VideoUploadEnhanced';
 import { Film, Sparkles, Zap, Users } from 'lucide-react';
 
 export default function VideoEditor() {
