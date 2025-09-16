@@ -293,7 +293,7 @@ export function VideoUpload({ workspaceId, onUploadComplete, onUploadError }: Vi
                   <div>
                     <span className="text-gray-500">Frame Rate:</span>
                     <span className="ml-1 font-medium">
-                      {uploadState.metadata.fps.toFixed(1)} fps
+                      {uploadState.metadata.frameRate.toFixed(1)} fps
                     </span>
                   </div>
                 </div>

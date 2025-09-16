@@ -24,6 +24,7 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.39.0",
     "@tanstack/react-query": "^5.87.4",
+    "@types/video.js": "^7.3.58",
     "@vercel/blob": "^1.1.1",
     "@vercel/edge-config": "^1.4.0",
     "@vercel/kv": "^3.0.0",
@@ -40,6 +41,7 @@
     "sharp": "^0.34.3",
     "slate": "^0.118.0",
     "slate-react": "^0.117.4",
+    "video.js": "^8.23.4",
     "wavesurfer.js": "^7.10.1",
     "zod": "^4.1.8",
     "zustand": "^5.0.7"

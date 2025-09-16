@@ -4,35 +4,47 @@
  */
 
 import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile } from '@ffmpeg/util';
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import type { VideoMetadata } from './types';
 
 export class VideoProcessor {
   private ffmpeg: FFmpeg | null = null;
   private initialized = false;
+  private initPromise: Promise<void> | null = null;
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
+    if (this.initPromise) return this.initPromise;
 
+    this.initPromise = this._initializeFFmpeg();
+    await this.initPromise;
+  }
+
+  private async _initializeFFmpeg(): Promise<void> {
     try {
       this.ffmpeg = new FFmpeg();
       
-      // Configure FFmpeg with custom paths for better compatibility
+      // Use the mt (multithreaded) version for better performance
+      const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm';
+      
       await this.ffmpeg.load({
-        coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
-        wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
       });
 
       this.initialized = true;
       console.log('FFmpeg initialized successfully');
     } catch (error) {
       console.error('Failed to initialize FFmpeg:', error);
+      this.initialized = false;
+      this.initPromise = null;
       throw new Error('Failed to initialize video processor');
     }
   }
 
   async generateThumbnail(videoBlob: Blob, timestamp: number = 0): Promise<Blob> {
-    await this.ensureInitialized();
+    await this.initialize();
 
     try {
       // Write video file to FFmpeg filesystem
@@ -55,38 +67,45 @@ export class VideoProcessor {
       await this.ffmpeg!.deleteFile('input.mp4');
       await this.ffmpeg!.deleteFile('thumbnail.jpg');
 
-      return new Blob([data], { type: 'image/jpeg' });
+      return new Blob([data as Uint8Array], { type: 'image/jpeg' });
     } catch (error) {
       console.error('Failed to generate thumbnail:', error);
       throw new Error('Failed to generate video thumbnail');
     }
   }
 
-  async generateThumbnailStrip(videoBlob: Blob, intervalSeconds: number = 10): Promise<Blob[]> {
-    await this.ensureInitialized();
+  async generateThumbnailStrip(
+    videoBlob: Blob, 
+    count: number = 10
+  ): Promise<{ timestamp: number; blob: Blob }[]> {
+    await this.initialize();
 
     try {
+      // First get video duration
       const metadata = await this.extractMetadata(videoBlob);
-      const thumbnails: Blob[] = [];
-      const totalThumbnails = Math.floor(metadata.duration / intervalSeconds);
+      const thumbnails: { timestamp: number; blob: Blob }[] = [];
+      const interval = metadata.duration / (count + 1); // +1 to avoid thumbnail at very end
 
       await this.ffmpeg!.writeFile('input.mp4', await fetchFile(videoBlob));
 
-      for (let i = 0; i < totalThumbnails; i++) {
-        const timestamp = i * intervalSeconds;
+      for (let i = 0; i < count; i++) {
+        const timestamp = (i + 1) * interval; // Start from first interval, not 0
         const outputName = `thumbnail_${i}.jpg`;
 
         await this.ffmpeg!.exec([
           '-i', 'input.mp4',
           '-ss', timestamp.toString(),
           '-frames:v', '1',
-          '-vf', 'scale=160:90', // Smaller thumbnails for strips
+          '-vf', 'scale=160:90', // Timeline thumbnail size
           '-f', 'image2',
           outputName
         ]);
 
         const data = await this.ffmpeg!.readFile(outputName);
-        thumbnails.push(new Blob([data], { type: 'image/jpeg' }));
+        thumbnails.push({
+          timestamp,
+          blob: new Blob([data as Uint8Array], { type: 'image/jpeg' })
+        });
         
         // Cleanup thumbnail file
         await this.ffmpeg!.deleteFile(outputName);
@@ -103,7 +122,7 @@ export class VideoProcessor {
   }
 
   async extractAudioTrack(videoBlob: Blob): Promise<Blob> {
-    await this.ensureInitialized();
+    await this.initialize();
 
     try {
       await this.ffmpeg!.writeFile('input.mp4', await fetchFile(videoBlob));
@@ -123,7 +142,7 @@ export class VideoProcessor {
       await this.ffmpeg!.deleteFile('input.mp4');
       await this.ffmpeg!.deleteFile('audio.mp3');
 
-      return new Blob([data], { type: 'audio/mp3' });
+      return new Blob([data as Uint8Array], { type: 'audio/mp3' });
     } catch (error) {
       console.error('Failed to extract audio:', error);
       throw new Error('Failed to extract audio track');
@@ -131,7 +150,7 @@ export class VideoProcessor {
   }
 
   async extractMetadata(videoBlob: Blob): Promise<VideoMetadata> {
-    await this.ensureInitialized();
+    await this.initialize();
 
     try {
       await this.ffmpeg!.writeFile('input.mp4', await fetchFile(videoBlob));
@@ -176,7 +195,7 @@ export class VideoProcessor {
   }
 
   async generateEditingProxy(videoBlob: Blob): Promise<Blob> {
-    await this.ensureInitialized();
+    await this.initialize();
 
     try {
       await this.ffmpeg!.writeFile('input.mp4', await fetchFile(videoBlob));
@@ -199,7 +218,7 @@ export class VideoProcessor {
       await this.ffmpeg!.deleteFile('input.mp4');
       await this.ffmpeg!.deleteFile('proxy.mp4');
 
-      return new Blob([data], { type: 'video/mp4' });
+      return new Blob([data as Uint8Array], { type: 'video/mp4' });
     } catch (error) {
       console.error('Failed to generate proxy:', error);
       throw new Error('Failed to generate editing proxy');
@@ -249,12 +268,6 @@ export class VideoProcessor {
     };
   }
 
-  private async ensureInitialized(): Promise<void> {
-    if (!this.initialized) {
-      await this.initialize();
-    }
-  }
-
   private parseFrameRate(frameRateString: string): number {
     const [num, den] = frameRateString.split('/').map(Number);
     return den === 0 ? 0 : num / den;
@@ -266,6 +279,7 @@ export class VideoProcessor {
       // Memory will be garbage collected
       this.ffmpeg = null;
       this.initialized = false;
+      this.initPromise = null;
     }
   }
 }
