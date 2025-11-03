@@ -34,6 +34,8 @@ A modern AI-powered video editing platform built with the **Supercharger Manifes
 
 ## Quick Start
 
+**Want to get started in 5 minutes?** Check out [QUICKSTART.md](./QUICKSTART.md) 🚀
+
 ### Prerequisites
 
 - **Node.js 18+** - [Download from nodejs.org](https://nodejs.org)
