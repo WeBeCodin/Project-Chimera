@@ -82,7 +82,7 @@ postgresql://postgres.xxx:[password]@aws-0-us-west-1.pooler.supabase.com:5432/po
 npm install -g vercel
 ```
 
-### 3.2 Link Repository
+### 3.2 Link Repository and Configure Monorepo
 
 ```bash
 # From your project root
@@ -91,6 +91,17 @@ vercel link
 ```
 
 Follow the prompts to connect your GitHub repository.
+
+**Important for Monorepo Setup:**
+After linking, configure the project for the monorepo structure:
+
+1. Go to your project on [vercel.com/dashboard](https://vercel.com/dashboard)
+2. Navigate to **Settings → General**
+3. Under **Root Directory**, click **Edit**
+4. Set it to: `frontend`
+5. Click **Save**
+
+This tells Vercel that the Next.js application is in the `frontend` directory of the monorepo.
 
 ### 3.3 Set Environment Variables
 

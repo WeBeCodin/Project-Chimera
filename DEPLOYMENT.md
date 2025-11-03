@@ -161,17 +161,21 @@ NEXT_PUBLIC_API_URL="http://localhost:3000"
 
 ## Deployment
 
-### Backend (Vercel)
-```bash
-cd backend
-vercel --prod
-```
+### Monorepo Configuration
 
-### Frontend (Vercel)
-```bash
-cd frontend
-vercel --prod
-```
+This is a monorepo project. When deploying to Vercel:
+
+1. **Via Vercel Dashboard**: Set the **Root Directory** to `frontend` in project settings
+2. **Via CLI**: Deploy from the frontend directory:
+   ```bash
+   cd frontend
+   vercel --prod
+   ```
+
+The root `vercel.json` is kept minimal to avoid configuration conflicts. Build settings should be configured in the Vercel project settings or by deploying from the frontend directory directly.
+
+### Backend (Vercel Functions)
+Backend API routes are included in the frontend Next.js application under `frontend/src/app/api/`.
 
 ### Infrastructure (AWS)
 Already deployed via CDK in Step 1.
