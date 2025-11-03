@@ -227,6 +227,8 @@ The Drizzle ORM schema (`frontend/src/lib/db/schema.ts`) includes:
 
 ### Manual Deployment Steps
 
+**Important**: This is a monorepo. When deploying to Vercel, you need to set the **Root Directory** to `frontend` in your Vercel project settings.
+
 1. **Set up Supabase Database**
    - Create a new project at [supabase.com](https://supabase.com)
    - Copy the connection string from Settings → Database
@@ -240,7 +242,17 @@ The Drizzle ORM schema (`frontend/src/lib/db/schema.ts`) includes:
    # Install Vercel CLI
    npm install -g vercel
    
+   # Link and configure for monorepo
+   vercel link
+   # When prompted, set Root Directory to: frontend
+   
    # Deploy
+   vercel --prod
+   ```
+   
+   **Alternative**: Deploy from the frontend directory directly:
+   ```bash
+   cd frontend
    vercel --prod
    ```
 
