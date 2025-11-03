@@ -1,306 +1,529 @@
 # Production Deployment Guide
 
-This guide walks you through deploying Project Chimera to production using Vercel and AWS.
+This guide walks you through deploying Project Chimera to production using **free tier services only**: Vercel, Supabase, Groq, and Google Gemini.
 
 ## Prerequisites
 
-- AWS Account with programmatic access
-- Vercel Account  
-- Node.js 18+
-- Git repository access
+- **Vercel Account** - [Sign up at vercel.com](https://vercel.com) (free tier)
+- **Supabase Account** - [Sign up at supabase.com](https://supabase.com) (free tier)
+- **Groq API Key** - [Get from console.groq.com](https://console.groq.com) (free tier)
+- **Google Gemini API Key** - [Get from aistudio.google.com](https://aistudio.google.com/app/apikey) (free tier)
+- **Node.js 18+** - For local build verification
+- **Git** - Repository access
 
-## Step 1: AWS Infrastructure Setup
+## Deployment Options
 
-### 1.1 Configure AWS CLI
-```bash
-# Install AWS CLI if not already installed
-npm install -g aws-cdk
+### Option 1: One-Click Deploy (Fastest)
 
-# Configure AWS credentials
-aws configure
-# Enter your AWS Access Key ID, Secret Access Key, and region
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FWeBeCodin%2FProject-Chimera&env=DATABASE_URL,GROQ_API_KEY,GOOGLE_GENERATIVE_AI_API_KEY,BLOB_READ_WRITE_TOKEN&envDescription=Environment%20variables%20for%20Project%20Chimera&envLink=https%3A%2F%2Fgithub.com%2FWeBeCodin%2FProject-Chimera%23environment-variables&project-name=project-chimera&repository-name=project-chimera)
+
+1. Click the "Deploy" button above
+2. Follow the Vercel deployment wizard
+3. Add environment variables when prompted (see Step 3 below)
+4. Wait for deployment to complete
+
+### Option 2: Manual Deployment (Recommended)
+
+Follow these steps for full control over your deployment:
+
+## Step 1: Set Up Supabase Database
+
+### 1.1 Create Supabase Project
+
+1. Go to [supabase.com/dashboard](https://supabase.com/dashboard)
+2. Click "New Project"
+3. Fill in project details:
+   - **Name**: `project-chimera-prod`
+   - **Database Password**: Use a strong password (save it securely)
+   - **Region**: Choose closest to your users
+4. Click "Create new project"
+5. Wait ~2 minutes for provisioning
+
+### 1.2 Get Connection String
+
+1. In Supabase dashboard, go to **Settings → Database**
+2. Scroll to "Connection string" section
+3. Select **"Connection pooling"**
+4. Copy the URI (Transaction mode)
+5. Replace `[YOUR-PASSWORD]` with your database password
+6. Save this for Step 3
+
+Example:
+```
+postgresql://postgres.xxx:[password]@aws-0-us-west-1.pooler.supabase.com:5432/postgres?pgbouncer=true&connection_limit=1
 ```
 
-### 1.2 Deploy Infrastructure
-```bash
-# Navigate to infrastructure directory
-cd infra
+## Step 2: Configure AI Providers
 
-# Install dependencies
-npm install
+### 2.1 Get Groq API Key (Primary AI Provider)
 
-# Bootstrap CDK (first time only)
-npx cdk bootstrap
+1. Go to [console.groq.com](https://console.groq.com)
+2. Sign up or log in
+3. Navigate to "API Keys"
+4. Click "Create API Key"
+5. Name it "Project Chimera Production"
+6. Copy the key (starts with `gsk_`)
+7. Save it securely
 
-# Deploy the stack
-npx cdk deploy
-```
+### 2.2 Get Google Gemini API Key (Fallback Provider)
 
-**Save the CDK outputs:**
-- `VideoBucketName` - Your S3 bucket name
-- `StateMachineArn` - Step Functions ARN
-- `VideoProcessorLambdaArn` - Lambda function ARN
+1. Go to [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Select "Create API key in new project"
+5. Copy the key (starts with `AIza`)
+6. Save it securely
 
-## Step 2: Vercel Setup
+## Step 3: Deploy to Vercel
 
-### 2.1 Install Vercel CLI
+### 3.1 Install Vercel CLI
+
 ```bash
 npm install -g vercel
+```
+
+### 3.2 Link Repository
+
+```bash
+# From your project root
 vercel login
+vercel link
 ```
 
-### 2.2 Create Vercel Project
+Follow the prompts to connect your GitHub repository.
+
+### 3.3 Set Environment Variables
+
+Add environment variables via Vercel CLI or dashboard:
+
+**Via CLI:**
 ```bash
-# From the root directory
-vercel
+# Database
+vercel env add DATABASE_URL production
+# Paste your Supabase connection string
 
-# Follow the prompts:
-# - Link to existing project: No
-# - Project name: project-chimera
-# - Directory: ./
-# - Override settings: No
+# AI Providers
+vercel env add GROQ_API_KEY production
+# Paste your Groq API key
+
+vercel env add GOOGLE_GENERATIVE_AI_API_KEY production
+# Paste your Gemini API key
 ```
 
-### 2.3 Add Postgres Database
-1. Go to your Vercel dashboard
+**Via Dashboard:**
+1. Go to [vercel.com/dashboard](https://vercel.com/dashboard)
 2. Select your project
-3. Go to Storage → Create Database → Postgres
-4. Choose a region close to your users
-5. Copy the connection strings when provided
+3. Go to **Settings → Environment Variables**
+4. Add the following:
 
-## Step 3: Environment Variables
+| Variable | Value | Environment |
+|----------|-------|-------------|
+| `DATABASE_URL` | Your Supabase connection string | Production |
+| `GROQ_API_KEY` | Your Groq API key | Production |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Your Gemini API key | Production |
 
-### 3.1 Set Vercel Environment Variables
+### 3.4 Set Up Vercel Blob Storage
 
-In your Vercel dashboard, go to Settings → Environment Variables and add:
+1. In Vercel dashboard, go to **Storage**
+2. Click **Create Database** → **Blob**
+3. Name it `project-chimera-videos`
+4. The `BLOB_READ_WRITE_TOKEN` will be automatically added to your environment
+
+### 3.5 Deploy
 
 ```bash
-# Authentication
-NEXTAUTH_SECRET=your-random-secret-key-generate-with-openssl-rand-base64-32
-NEXTAUTH_URL=https://your-project-name.vercel.app
-
-# Database (from Vercel Postgres setup)
-POSTGRES_PRISMA_URL=postgresql://username:password@host/db?pgbouncer=true
-POSTGRES_URL_NON_POOLING=postgresql://username:password@host/db
-
-# AWS Configuration (from CDK deployment)
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your-aws-access-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret-key
-S3_BUCKET_NAME=chimera-videos-your-account-id
-
-# Optional: Analytics and monitoring
-NEXT_PUBLIC_VERCEL_ANALYTICS_ID=your-analytics-id
-```
-
-### 3.2 Generate Secrets
-```bash
-# Generate NEXTAUTH_SECRET
-openssl rand -base64 32
-
-# Or use Node.js
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-```
-
-## Step 4: Database Migration
-
-### 4.1 Push Prisma Schema
-```bash
-# From backend directory
-cd backend
-
-# Generate Prisma client
-npm run prisma:generate
-
-# Push schema to production database
-npm run prisma:push
-
-# Optional: Seed with sample data
-npm run db:setup
-```
-
-## Step 5: Deploy to Production
-
-### 5.1 Deploy with Vercel CLI
-```bash
-# From root directory
+# Deploy to production
 vercel --prod
 ```
 
-### 5.2 Deploy via Git (Recommended)
-1. Push your code to the main branch
-2. Vercel will automatically deploy
-3. Monitor the deployment in Vercel dashboard
+Or push to your main branch if you have automatic deployments enabled.
 
-## Step 6: DNS and Custom Domain (Optional)
+## Step 4: Initialize Database Schema
+
+After successful deployment:
+
+```bash
+# Clone the environment variables locally
+vercel env pull
+
+# Push database schema to Supabase
+cd frontend
+npm run db:push
+```
+
+This creates all necessary tables in your production database.
+
+## Step 5: Verify Deployment
+
+### 5.1 Check Deployment Status
+
+1. Go to [vercel.com/dashboard](https://vercel.com/dashboard)
+2. Select your project
+3. Check that deployment is successful
+4. Note your production URL
+
+### 5.2 Test Key Features
+
+Visit your production URL and test:
+
+1. **Homepage loads**: Check that the site is accessible
+2. **AI Chat works**: Send a test message
+3. **Streaming works**: Verify real-time AI responses
+4. **Database works**: Check that conversations are saved
+5. **Video upload** (if configured): Upload a test video
+
+### 5.3 Check Logs
+
+```bash
+# View real-time logs
+vercel logs --follow
+
+# Or in Vercel dashboard → Logs
+```
+
+## Step 6: Custom Domain (Optional)
 
 ### 6.1 Add Custom Domain
-1. Go to Vercel dashboard → Settings → Domains
-2. Add your custom domain
-3. Update DNS records as instructed by Vercel
 
-### 6.2 Update Environment Variables
-Update `NEXTAUTH_URL` to your custom domain:
-```bash
-NEXTAUTH_URL=https://yourdomain.com
+1. In Vercel dashboard, go to **Settings → Domains**
+2. Click **Add Domain**
+3. Enter your domain name
+4. Follow DNS configuration instructions
+
+### 6.2 Update DNS Records
+
+Add these records to your DNS provider:
+
+**For root domain (example.com):**
+```
+Type: A
+Name: @
+Value: 76.76.21.21
 ```
 
-## Step 7: Monitoring and Analytics
+**For www subdomain:**
+```
+Type: CNAME
+Name: www
+Value: cname.vercel-dns.com
+```
+
+### 6.3 Update Environment Variables
+
+If using a custom domain, update `NEXTAUTH_URL`:
+
+```bash
+vercel env add NEXTAUTH_URL production
+# Enter: https://yourdomain.com
+```
+
+## Step 7: Enable Analytics (Optional)
 
 ### 7.1 Vercel Analytics
-```bash
-# Add to vercel.json
-{
-  "analytics": {
-    "id": "your-analytics-id"
-  }
+
+Vercel Analytics is automatically enabled for all deployments. View metrics in:
+- Vercel Dashboard → Analytics
+
+### 7.2 Configure Speed Insights
+
+Add to `frontend/app/layout.tsx`:
+
+```typescript
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <Analytics />
+        <SpeedInsights />
+      </body>
+    </html>
+  );
 }
 ```
 
-### 7.2 AWS CloudWatch
-Monitor your infrastructure:
-- Lambda function logs
-- Step Functions execution history
-- S3 storage metrics
+## Monitoring and Maintenance
 
-## Troubleshooting
+### Application Monitoring
 
-### Common Issues
+**Vercel Dashboard:**
+- **Analytics**: Track page views, users, and performance
+- **Logs**: Real-time function execution logs
+- **Speed Insights**: Core Web Vitals monitoring
+- **Build Logs**: Deployment history and build output
 
-#### Build Failures
+**Supabase Dashboard:**
+- **Database**: Query performance and connection pooling
+- **Storage**: Database size and growth
+- **Logs**: SQL query logs and errors
+- **API**: API usage and rate limiting
+
+### Performance Monitoring
+
+Monitor these key metrics:
+
+| Metric | Target | Dashboard |
+|--------|--------|-----------|
+| Time to First Byte (TTFB) | <100ms | Vercel Analytics |
+| Streaming Latency | <500ms | Vercel Logs |
+| Database Query Time | <200ms | Supabase |
+| Function Duration | <10s | Vercel Functions |
+| Error Rate | <1% | Vercel Logs |
+
+### Cost Monitoring (Free Tier Limits)
+
+**Vercel Free Tier:**
+- ✅ 100GB bandwidth/month
+- ✅ 6000 function hours/month
+- ✅ 500MB Blob storage
+- ⚠️ Monitor: Vercel Dashboard → Usage
+
+**Supabase Free Tier:**
+- ✅ 500MB database storage
+- ✅ 2GB bandwidth/month
+- ✅ 2 concurrent connections
+- ⚠️ Monitor: Supabase Dashboard → Usage
+
+**Groq Free Tier:**
+- ✅ 30 requests per minute
+- ✅ Unlimited requests per day
+- ⚠️ Rate limit handled automatically with fallback
+
+**Google Gemini Free Tier:**
+- ✅ 60 requests per minute
+- ✅ 1500 requests per day
+- ⚠️ Used as fallback provider
+
+## Troubleshooting Production Issues
+
+### Deployment Failures
+
+**Issue: Build fails with type errors**
+
 ```bash
-# Check build logs in Vercel dashboard
-# Common fixes:
-1. Ensure all environment variables are set
-2. Check TypeScript errors
-3. Verify package.json scripts
+# Check build locally first
+npm run build
+npm run type-check
+
+# Fix errors and redeploy
+git add .
+git commit -m "Fix type errors"
+git push
 ```
 
-#### Database Connection Issues
+**Issue: Environment variables not found**
+
 ```bash
-# Test connection
-npx prisma db seed
+# Verify all variables are set
+vercel env ls
 
-# Common fixes:
-1. Verify connection strings
-2. Check database region matches Vercel deployment region
-3. Ensure IP allowlisting if required
+# Pull environment variables locally
+vercel env pull
+
+# Check that variables exist in Vercel dashboard
 ```
 
-#### AWS Permissions Issues
+### Database Issues
+
+**Issue: Connection timeouts**
+
+Solutions:
+1. Check Supabase project is active
+2. Verify DATABASE_URL uses connection pooling
+3. Check connection limits (2 concurrent on free tier)
+4. Restart Supabase project if needed
+
+**Issue: Table doesn't exist**
+
 ```bash
-# Common fixes:
-1. Verify AWS credentials have necessary permissions
-2. Check S3 bucket policies
-3. Ensure Lambda execution role has correct permissions
+# Push schema again
+cd frontend
+npm run db:push
+
+# Or check Supabase SQL Editor
 ```
 
-### Performance Optimization
+### AI Provider Issues
 
-#### Frontend Optimization
-```bash
-# Enable compression in vercel.json
-{
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    }
-  ]
-}
-```
+**Issue: All AI providers failing**
 
-#### Database Optimization
-```sql
--- Add database indexes for common queries
-CREATE INDEX idx_jobs_project_id ON jobs(project_id);
-CREATE INDEX idx_videos_project_id ON videos(project_id);
-CREATE INDEX idx_jobs_status ON jobs(status);
-```
+Solutions:
+1. Check API keys in Vercel dashboard
+2. Verify keys are valid in provider dashboards
+3. Check rate limits (view Vercel logs)
+4. Test providers individually:
+   - Groq: [console.groq.com](https://console.groq.com)
+   - Gemini: [aistudio.google.com](https://aistudio.google.com)
 
-## Security Checklist
+**Issue: Slow AI responses**
 
-- [ ] All environment variables set securely
-- [ ] NEXTAUTH_SECRET is randomly generated
-- [ ] AWS credentials have minimal required permissions
-- [ ] Database connections use SSL
-- [ ] S3 bucket has proper CORS configuration
-- [ ] API rate limiting is configured
+Solutions:
+1. Check provider status pages
+2. Review model selection in `/lib/ai/provider-factory.ts`
+3. Consider switching default provider
+4. Check network latency in Vercel region
+
+### Video Upload Issues
+
+**Issue: Upload fails or times out**
+
+Solutions:
+1. Check Blob storage quota (500MB free tier)
+2. Verify BLOB_READ_WRITE_TOKEN is set
+3. Check file size limits (<100MB recommended)
+4. Review Vercel function timeout (10s default)
+
+## Security Best Practices
+
+### Environment Security
+
+✅ **Do:**
+- Use Vercel environment variables (encrypted)
+- Rotate API keys every 90 days
+- Enable Vercel authentication for preview deployments
+- Use separate keys for staging and production
+
+❌ **Don't:**
+- Commit `.env` files to git
+- Share API keys in code or comments
+- Use production keys in development
+- Store secrets in client-side code
+
+### Database Security
+
+✅ **Enabled by default in Supabase:**
+- Row Level Security (RLS)
+- SSL/TLS encryption
+- Connection pooling
+- IP allowlisting (optional)
+
+✅ **Additional steps:**
+1. Enable RLS policies for all tables
+2. Create service role keys for admin operations
+3. Use anon key for client access
+4. Regular database backups
+
+### API Security
+
+✅ **Built-in protection:**
+- Vercel Edge Network DDoS protection
+- Automatic SSL certificates
+- CORS configured correctly
+- Rate limiting with Vercel KV
 
 ## Backup and Recovery
 
-### Database Backup
+### Database Backups
+
+**Automatic backups:**
+- Supabase performs daily automatic backups
+- 7-day retention on free tier
+- Restore via Supabase dashboard
+
+**Manual backup:**
 ```bash
-# Set up automated backups in Vercel dashboard
-# Or create manual backup
-pg_dump $POSTGRES_URL > backup.sql
+# Export database
+pg_dump $DATABASE_URL > backup.sql
+
+# Import backup
+psql $DATABASE_URL < backup.sql
 ```
 
-### Code Backup
-```bash
-# Ensure code is backed up in Git
-git remote add backup your-backup-repository
-git push backup main
-```
+### Code Backups
 
-## Monitoring and Alerting
+**Git repository:**
+- Main branch contains production code
+- Tag releases: `git tag v1.0.0`
+- Push tags: `git push --tags`
 
-### Set up monitoring for:
-- API response times
-- Error rates
-- Database connection health
-- S3 storage usage
-- Lambda function errors
+**Vercel deployments:**
+- All deployments are immutable
+- Instant rollback available
+- 30-day deployment history
 
-### Recommended tools:
-- Vercel Analytics for frontend metrics
-- AWS CloudWatch for infrastructure
-- Sentry for error tracking
-- Uptime monitoring service
+### Blob Storage Backups
 
-## Cost Management
+Currently, Vercel Blob doesn't support automatic backups. For critical videos:
 
-### Monitor costs for:
-- Vercel usage (functions, bandwidth)
-- AWS services (S3, Lambda, Step Functions)
-- Database storage and compute
+1. Download important files locally
+2. Consider separate backup storage
+3. Implement export functionality
 
-### Optimization tips:
-- Set up billing alerts
-- Use S3 lifecycle policies
-- Optimize Lambda memory allocation
-- Monitor database query performance
+## Scaling Considerations
 
-## Updates and Maintenance
+### When to Upgrade
 
-### Regular maintenance tasks:
-- Keep dependencies updated
-- Monitor security advisories
-- Review and rotate secrets
-- Clean up unused S3 objects
-- Archive old database records
+Consider upgrading from free tier when:
 
-### Deployment pipeline:
-1. Development → Staging → Production
-2. Automated testing
-3. Gradual rollouts
-4. Rollback procedures
+- **Traffic**: >100GB bandwidth/month
+- **Storage**: >500MB database or Blob storage
+- **Processing**: >6000 function hours/month
+- **AI Usage**: Need higher rate limits
 
-## Support
+### Upgrade Path
 
-For deployment issues:
-1. Check Vercel deployment logs
-2. Review AWS CloudWatch logs
-3. Verify all environment variables
-4. Test database connectivity
-5. Check API endpoints manually
+1. **Vercel Pro** ($20/month):
+   - 1TB bandwidth
+   - 100GB Blob storage
+   - Advanced analytics
 
-Contact support channels:
-- GitHub Issues for bugs
-- Vercel support for platform issues
-- AWS support for infrastructure problems
+2. **Supabase Pro** ($25/month):
+   - 8GB database
+   - 100GB bandwidth
+   - Daily backups
+
+3. **AI Providers**:
+   - Groq: Currently free, paid tier TBD
+   - Gemini: Pay-as-you-go for higher limits
+
+## Deployment Checklist
+
+Before going live, verify:
+
+- [ ] All environment variables set correctly
+- [ ] Database schema pushed and verified
+- [ ] AI providers tested and working
+- [ ] Video upload functionality tested
+- [ ] Custom domain configured (if applicable)
+- [ ] Analytics and monitoring enabled
+- [ ] Error tracking configured
+- [ ] Backup strategy in place
+- [ ] Security best practices followed
+- [ ] Performance metrics acceptable
+- [ ] Free tier limits understood
+- [ ] Upgrade path planned
+
+## Support Resources
+
+**Documentation:**
+- [Vercel Docs](https://vercel.com/docs)
+- [Supabase Docs](https://supabase.com/docs)
+- [Next.js Docs](https://nextjs.org/docs)
+- [Vercel AI SDK Docs](https://sdk.vercel.ai/docs)
+
+**Status Pages:**
+- [Vercel Status](https://status.vercel.com)
+- [Supabase Status](https://status.supabase.com)
+- [Groq Status](https://status.groq.com)
+
+**Community:**
+- GitHub Issues: [Project Chimera Issues](https://github.com/WeBeCodin/Project-Chimera/issues)
+- Vercel Discord: [vercel.com/discord](https://vercel.com/discord)
+- Supabase Discord: [supabase.com/discord](https://supabase.com/discord)
+
+## Post-Deployment
+
+After successful deployment:
+
+1. **Monitor for 24 hours**: Watch logs and analytics
+2. **Test all features**: Verify everything works in production
+3. **Set up alerts**: Configure monitoring alerts
+4. **Document custom changes**: Update team documentation
+5. **Plan maintenance window**: Schedule regular updates
+6. **Review security**: Regular security audits
+7. **Optimize performance**: Based on real usage data
+
+Congratulations! Your Project Chimera instance is now live in production! 🎉
