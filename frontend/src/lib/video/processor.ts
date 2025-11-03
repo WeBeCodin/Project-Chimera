@@ -67,7 +67,7 @@ export class VideoProcessor {
       await this.ffmpeg!.deleteFile('input.mp4');
       await this.ffmpeg!.deleteFile('thumbnail.jpg');
 
-      return new Blob([data as Uint8Array], { type: 'image/jpeg' });
+      return new Blob([new Uint8Array(data as Uint8Array)], { type: 'image/jpeg' });
     } catch (error) {
       console.error('Failed to generate thumbnail:', error);
       throw new Error('Failed to generate video thumbnail');
@@ -104,7 +104,7 @@ export class VideoProcessor {
         const data = await this.ffmpeg!.readFile(outputName);
         thumbnails.push({
           timestamp,
-          blob: new Blob([data as Uint8Array], { type: 'image/jpeg' })
+          blob: new Blob([new Uint8Array(data as Uint8Array)], { type: 'image/jpeg' })
         });
         
         // Cleanup thumbnail file
@@ -142,7 +142,7 @@ export class VideoProcessor {
       await this.ffmpeg!.deleteFile('input.mp4');
       await this.ffmpeg!.deleteFile('audio.mp3');
 
-      return new Blob([data as Uint8Array], { type: 'audio/mp3' });
+      return new Blob([new Uint8Array(data as Uint8Array)], { type: 'audio/mp3' });
     } catch (error) {
       console.error('Failed to extract audio:', error);
       throw new Error('Failed to extract audio track');
@@ -218,7 +218,7 @@ export class VideoProcessor {
       await this.ffmpeg!.deleteFile('input.mp4');
       await this.ffmpeg!.deleteFile('proxy.mp4');
 
-      return new Blob([data as Uint8Array], { type: 'video/mp4' });
+      return new Blob([new Uint8Array(data as Uint8Array)], { type: 'video/mp4' });
     } catch (error) {
       console.error('Failed to generate proxy:', error);
       throw new Error('Failed to generate editing proxy');
