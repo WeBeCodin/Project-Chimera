@@ -9,6 +9,7 @@
 
 import { useChat } from '@ai-sdk/react';
 import { useState } from 'react';
+import type { UIMessage } from '@ai-sdk/react';
 
 export interface StreamingInterfaceProps {
   conversationId?: string;
@@ -48,10 +49,10 @@ export function StreamingInterface({
         temperature: 0.7
       }
     },
-    onFinish: (message) => {
+    onFinish: (message: UIMessage) => {
       console.log('Message completed:', message);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Chat error:', error);
     }
   });
@@ -103,7 +104,7 @@ export function StreamingInterface({
             </div>
           </div>
         ) : (
-          messages.map((message) => (
+          messages.map((message: UIMessage) => (
             <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[80%] px-4 py-3 rounded-lg break-words ${
                 message.role === 'user' 
