@@ -7,9 +7,9 @@
 
 'use client';
 
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
 import { useState } from 'react';
-import type { Message } from 'ai';
+import type { UIMessage } from '@ai-sdk/react';
 
 export interface StreamingInterfaceProps {
   conversationId?: string;
@@ -38,6 +38,7 @@ export function StreamingInterface({
     isLoading,
     error
   } = useChat({
+    api: '/api/chat',
     body: {
       conversationId,
       model,
@@ -48,7 +49,7 @@ export function StreamingInterface({
         temperature: 0.7
       }
     },
-    onFinish: (message: Message) => {
+    onFinish: (message: UIMessage) => {
       console.log('Message completed:', message);
     },
     onError: (error: Error) => {
@@ -103,7 +104,7 @@ export function StreamingInterface({
             </div>
           </div>
         ) : (
-          messages.map((message: Message) => (
+          messages.map((message: UIMessage) => (
             <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[80%] px-4 py-3 rounded-lg break-words ${
                 message.role === 'user' 
