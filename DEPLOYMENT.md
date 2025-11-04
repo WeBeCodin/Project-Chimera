@@ -161,17 +161,38 @@ NEXT_PUBLIC_API_URL="http://localhost:3000"
 
 ## Deployment
 
-### Backend (Vercel)
-```bash
-cd backend
-vercel --prod
-```
+### Monorepo Configuration
 
-### Frontend (Vercel)
+This is a monorepo project. When deploying to Vercel:
+
+1. **Via Vercel Dashboard**: Set the **Root Directory** to `frontend` in project settings
+2. **Via CLI**: Deploy from the frontend directory:
+   ```bash
+   cd frontend
+   vercel --prod
+   ```
+
+The root `vercel.json` is kept minimal to avoid configuration conflicts. Build settings should be configured in the Vercel project settings or by deploying from the frontend directory directly.
+
+### Backend (Vercel Functions)
+Backend API routes are included in the frontend Next.js application under `frontend/src/app/api/`. These are automatically deployed as Vercel Functions when deploying the Next.js app.
+
+**API Routes Available:**
+- `/api/chat` - AI chat endpoints
+- `/api/v2/video/upload/initiate` - Video upload initialization
+- `/api/v2/video/upload/chunk` - Chunked video upload
+- `/api/v2/video/process` - Video processing
+- `/api/v2/video/ai-assist` - AI-powered video analysis
+
+**Testing API Routes Locally:**
 ```bash
 cd frontend
-vercel --prod
+npm run dev
+# API routes available at http://localhost:3000/api/*
 ```
+
+**Vercel Functions Configuration:**
+No additional configuration needed. Functions are automatically deployed when deploying the Next.js app. For long-running functions, configure `maxDuration` in the route file.
 
 ### Infrastructure (AWS)
 Already deployed via CDK in Step 1.
