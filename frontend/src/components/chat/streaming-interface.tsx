@@ -7,7 +7,6 @@
 
 'use client';
 
-import { useChat } from '@ai-sdk/react';
 import { useState } from 'react';
 import type { UIMessage } from '@ai-sdk/react';
 
@@ -29,39 +28,81 @@ export function StreamingInterface({
   tools = []
 }: StreamingInterfaceProps) {
   const [model, setModel] = useState<'auto' | 'groq-llama-70b' | 'groq-llama-8b' | 'gemini-flash'>('auto');
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<UIMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    error
-  } = useChat({
-    api: '/api/chat',
-    body: {
-      conversationId,
-      model,
-      tools,
-      context: {
-        ragEnabled: false,
-        maxTokens: 4096,
-        temperature: 0.7
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: UIMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      parts: [{ type: 'text', text: input }]
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map(m => ({
+            role: m.role,
+            content: m.parts.filter(p => p.type === 'text').map(p => 'text' in p ? p.text : '').join('')
+          })),
+          conversationId,
+          model,
+          tools,
+          context: {
+            ragEnabled: false,
+            maxTokens: 4096,
+            temperature: 0.7
+          }
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to get response');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let assistantText = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          assistantText += decoder.decode(value, { stream: true });
+        }
       }
-    },
-    onFinish: (message: UIMessage) => {
-      console.log('Message completed:', message);
-    },
-    onError: (error: Error) => {
-      console.error('Chat error:', error);
+
+      const assistantMessage: UIMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        parts: [{ type: 'text', text: assistantText }]
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (err) {
+      setError(err as Error);
+      console.error('Chat error:', err);
+    } finally {
+      setIsLoading(false);
     }
-  });
+  };
 
   const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (input.trim() && !isLoading) {
-      handleSubmit(e);
-    }
+    handleSubmit(e);
   };
 
   return (
@@ -104,7 +145,11 @@ export function StreamingInterface({
             </div>
           </div>
         ) : (
-          messages.map((message: UIMessage) => (
+          messages.map((message: UIMessage) => {
+            // Extract content from message parts
+            const content = message.parts.filter(p => p.type === 'text').map(p => 'text' in p ? p.text : '').join('');
+            
+            return (
             <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[80%] px-4 py-3 rounded-lg break-words ${
                 message.role === 'user' 
@@ -112,7 +157,7 @@ export function StreamingInterface({
                   : 'bg-white text-gray-900 shadow-sm border'
               }`}>
                 <div className="whitespace-pre-wrap">
-                  {message.content}
+                  {content}
                 </div>
                 {message.role === 'assistant' && (
                   <div className="text-xs text-gray-500 mt-2">
@@ -121,7 +166,8 @@ export function StreamingInterface({
                 )}
               </div>
             </div>
-          ))
+            );
+          })
         )}
         
         {isLoading && (

@@ -1,4 +1,4 @@
-/**
+ /**
  * Enhanced AI Chat API v2 Route
  * Supercharger Manifesto v3.0 Compliant
  * 
@@ -36,7 +36,7 @@ const ChatRequestSchema = z.object({
   context: z.object({
     useRAG: z.boolean().default(false),
     includeHistory: z.boolean().default(true),
-    sessionData: z.record(z.any()).optional(),
+    sessionData: z.record(z.string(), z.any()).optional(),
   }).optional(),
   workspaceId: z.string().uuid().optional(),
 });
@@ -141,19 +141,21 @@ export async function POST(request: NextRequest) {
     };
 
     // Stream response using Vercel AI SDK
-    const result = await streamText({
+    const result = streamText({
       model: modelInstance,
       messages,
       temperature: validatedRequest.config?.temperature || 0.7,
-      onFinish: async (result) => {
-        // Calculate cost
+      onFinish: async ({ usage }) => {
+        // Calculate cost using AI SDK v5 usage object
+        const promptTokens = (usage as any)?.promptTokens || 0;
+        const completionTokens = (usage as any)?.completionTokens || 0;
         const cost = calculateCost(
           selectedModel.provider, 
-          result.usage?.promptTokens || 0,
-          result.usage?.completionTokens || 0
+          promptTokens,
+          completionTokens
         );
         
-        metadata.tokenCount = (result.usage?.promptTokens || 0) + (result.usage?.completionTokens || 0);
+        metadata.tokenCount = promptTokens + completionTokens;
         metadata.cost = cost;
         
         // TODO: Store conversation in database with workspace isolation
@@ -162,17 +164,14 @@ export async function POST(request: NextRequest) {
     });
 
     // Return streaming response with proper headers
-    return new NextResponse(result.toTextStreamResponse().body, {
+    return result.toTextStreamResponse({
       status: 200,
       headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
         'X-Conversation-Id': validatedRequest.conversationId || 'new',
         'X-Model-Used': `${selectedModel.provider}/${selectedModel.id}`,
         'X-Trace-Id': traceId,
         'X-Session-Id': sessionId,
         'X-Workspace-Id': workspaceId || 'default',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
       }
     });
 
@@ -183,7 +182,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({
         error: 'Invalid request format',
-        details: error.errors,
+        details: error.issues,
         traceId
       }, { status: 400 });
     }

@@ -61,15 +61,14 @@ export class VideoProcessor {
       ]);
 
       // Read the generated thumbnail
-      const data = await this.ffmpeg!.readFile('thumbnail.jpg');
+      const data = await this.ffmpeg!.readFile('thumbnail.jpg') as Uint8Array;
       
       // Cleanup input file
       await this.ffmpeg!.deleteFile('input.mp4');
       await this.ffmpeg!.deleteFile('thumbnail.jpg');
 
-      // Convert FileData to Uint8Array for Blob
-      const uint8Data = data instanceof Uint8Array ? data : new Uint8Array(data);
-      return new Blob([uint8Data], { type: 'image/jpeg' });
+      // Create Blob from Uint8Array (spread into array to handle buffer type)
+      return new Blob([new Uint8Array(data)], { type: 'image/jpeg' });
     } catch (error) {
       console.error('Failed to generate thumbnail:', error);
       throw new Error('Failed to generate video thumbnail');
@@ -103,11 +102,10 @@ export class VideoProcessor {
           outputName
         ]);
 
-        const data = await this.ffmpeg!.readFile(outputName);
-        const uint8Data = data instanceof Uint8Array ? data : new Uint8Array(data);
+        const data = await this.ffmpeg!.readFile(outputName) as Uint8Array;
         thumbnails.push({
           timestamp,
-          blob: new Blob([uint8Data], { type: 'image/jpeg' })
+          blob: new Blob([new Uint8Array(data)], { type: 'image/jpeg' })
         });
         
         // Cleanup thumbnail file
@@ -139,14 +137,13 @@ export class VideoProcessor {
         'audio.mp3'
       ]);
 
-      const data = await this.ffmpeg!.readFile('audio.mp3');
+      const data = await this.ffmpeg!.readFile('audio.mp3') as Uint8Array;
       
       // Cleanup files
       await this.ffmpeg!.deleteFile('input.mp4');
       await this.ffmpeg!.deleteFile('audio.mp3');
 
-      const uint8Data = data instanceof Uint8Array ? data : new Uint8Array(data);
-      return new Blob([uint8Data], { type: 'audio/mp3' });
+      return new Blob([new Uint8Array(data)], { type: 'audio/mp3' });
     } catch (error) {
       console.error('Failed to extract audio:', error);
       throw new Error('Failed to extract audio track');
@@ -216,14 +213,13 @@ export class VideoProcessor {
         'proxy.mp4'
       ]);
 
-      const data = await this.ffmpeg!.readFile('proxy.mp4');
+      const data = await this.ffmpeg!.readFile('proxy.mp4') as Uint8Array;
 
       // Cleanup files
       await this.ffmpeg!.deleteFile('input.mp4');
       await this.ffmpeg!.deleteFile('proxy.mp4');
 
-      const uint8Data = data instanceof Uint8Array ? data : new Uint8Array(data);
-      return new Blob([uint8Data], { type: 'video/mp4' });
+      return new Blob([new Uint8Array(data)], { type: 'video/mp4' });
     } catch (error) {
       console.error('Failed to generate proxy:', error);
       throw new Error('Failed to generate editing proxy');

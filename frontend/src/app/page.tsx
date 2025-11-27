@@ -39,11 +39,11 @@ export default function HomePage() {
               </Link>
               
               <Link
-                href="/demo"
-                className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-lg hover:border-gray-400 hover:bg-white transition-all duration-200 flex items-center space-x-2 text-lg"
+                href="/projects"
+                className="px-8 py-4 border-2 border-gray-300 text-gray-900 rounded-lg hover:border-gray-400 hover:bg-white transition-all duration-200 flex items-center space-x-2 text-lg font-semibold"
               >
                 <Play className="w-5 h-5" />
-                <span>View Demo</span>
+                <span>View Projects</span>
               </Link>
             </div>
 

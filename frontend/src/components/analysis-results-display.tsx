@@ -150,21 +150,21 @@ export function AnalysisResultsDisplay({ result, loading = false, onBack }: Anal
             <div className="bg-white p-6 rounded-lg border">
               <h3 className="text-lg font-semibold mb-4">Analysis Jobs Status</h3>
               <div className="space-y-3">
-                {result.jobs.map((job) => (
-                  <div key={job.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                {result.jobs.map((job: any) => (
+                  <div key={job.id as string} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
                         {job.type === 'transcription' && <Mic className="w-4 h-4" />}
                         {job.type === 'detection' && <Eye className="w-4 h-4" />}
                         {job.type === 'summarization' && <FileText className="w-4 h-4" />}
-                        <span className="font-medium capitalize">{job.type}</span>
+                        <span className="font-medium capitalize">{String(job.type || 'unknown')}</span>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(job.status)}`}>
-                        {job.status}
+                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(String(job.status || 'UNKNOWN'))}`}>
+                        {String(job.status || 'UNKNOWN')}
                       </span>
                     </div>
                     <div className="text-sm text-gray-500">
-                      {job.completedAt ? new Date(job.completedAt).toLocaleString() : 
+                      {job.completedAt ? new Date(job.completedAt as string).toLocaleString() : 
                        job.startedAt ? 'In progress...' : 'Pending'}
                     </div>
                   </div>
@@ -181,7 +181,7 @@ export function AnalysisResultsDisplay({ result, loading = false, onBack }: Anal
                     <h4 className="font-medium">Transcription</h4>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">
-                    {result.transcription.segments?.length || 0} segments
+                    {Array.isArray((result.transcription as any).segments) ? (result.transcription as any).segments.length : 0} segments
                   </p>
                   <button
                     onClick={() => setActiveTab('transcription')}
@@ -199,7 +199,7 @@ export function AnalysisResultsDisplay({ result, loading = false, onBack }: Anal
                     <h4 className="font-medium">Detection</h4>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">
-                    {result.detection.objects?.length || 0} objects detected
+                    {Array.isArray((result.detection as any).objects) ? (result.detection as any).objects.length : 0} objects detected
                   </p>
                   <button
                     onClick={() => setActiveTab('detection')}
@@ -217,7 +217,7 @@ export function AnalysisResultsDisplay({ result, loading = false, onBack }: Anal
                     <h4 className="font-medium">Summary</h4>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">
-                    {result.summarization.sentiment} sentiment
+                    {String((result.summarization as any).sentiment || 'neutral')} sentiment
                   </p>
                   <button
                     onClick={() => setActiveTab('summarization')}
@@ -232,15 +232,15 @@ export function AnalysisResultsDisplay({ result, loading = false, onBack }: Anal
         )}
 
         {activeTab === 'transcription' && (
-          <TranscriptionDisplay result={result.transcription} />
+          <TranscriptionDisplay result={result.transcription as any} />
         )}
 
         {activeTab === 'detection' && (
-          <DetectionDisplay result={result.detection} />
+          <DetectionDisplay result={result.detection as any} />
         )}
 
         {activeTab === 'summarization' && (
-          <SummarizationDisplay result={result.summarization} />
+          <SummarizationDisplay result={result.summarization as any} />
         )}
       </div>
     </div>

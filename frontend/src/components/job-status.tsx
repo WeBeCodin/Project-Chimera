@@ -27,6 +27,7 @@ interface JobStatusProps {
   job: Job
   showDetails?: boolean
   onViewResults?: (videoId: string) => void
+  onStartProcessing?: (jobId: string) => void
 }
 
 const statusIcons = {
@@ -45,13 +46,24 @@ const statusColors = {
   CANCELLED: 'text-gray-500 bg-gray-50 border-gray-200',
 }
 
-export function JobStatus({ job, showDetails = false, onViewResults }: JobStatusProps) {
+export function JobStatus({ job, showDetails = false, onViewResults, onStartProcessing }: JobStatusProps) {
   const StatusIcon = statusIcons[job.status]
   const statusColorClass = statusColors[job.status]
+  const [processing, setProcessing] = React.useState(false)
 
   const formatDate = (dateString?: string | null) => {
     if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleString()
+  }
+
+  const handleStartProcessing = async () => {
+    if (!onStartProcessing) return
+    setProcessing(true)
+    try {
+      await onStartProcessing(job.id)
+    } finally {
+      setProcessing(false)
+    }
   }
 
   const getDuration = () => {
@@ -96,6 +108,25 @@ export function JobStatus({ job, showDetails = false, onViewResults }: JobStatus
             <p className="text-xs opacity-75 mt-1">
               Duration: {getDuration()}
             </p>
+          )}
+          {job.status === 'PENDING' && onStartProcessing && (
+            <button
+              onClick={handleStartProcessing}
+              disabled={processing}
+              className="mt-2 px-3 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              {processing ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="w-3 h-3" />
+                  Start Processing
+                </>
+              )}
+            </button>
           )}
           {job.status === 'COMPLETED' && job.video?.id && onViewResults && (
             <button
@@ -164,9 +195,10 @@ interface JobListProps {
   error?: string | null
   onRefresh?: () => void
   onViewResults?: (videoId: string) => void
+  onStartProcessing?: (jobId: string) => void
 }
 
-export function JobList({ jobs, loading, error, onRefresh, onViewResults }: JobListProps) {
+export function JobList({ jobs, loading, error, onRefresh, onViewResults, onStartProcessing }: JobListProps) {
   if (error) {
     return (
       <div className="text-center py-8">
@@ -222,7 +254,13 @@ export function JobList({ jobs, loading, error, onRefresh, onViewResults }: JobL
       
       <div className="space-y-3">
         {jobs.map((job) => (
-          <JobStatus key={job.id} job={job} showDetails onViewResults={onViewResults} />
+          <JobStatus 
+            key={job.id} 
+            job={job} 
+            showDetails 
+            onViewResults={onViewResults}
+            onStartProcessing={onStartProcessing}
+          />
         ))}
       </div>
     </div>

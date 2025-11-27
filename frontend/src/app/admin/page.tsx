@@ -13,11 +13,11 @@ export default function AdminPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link 
-                href="/demo"
+                href="/projects"
                 className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Demo
+                Back to Projects
               </Link>
               <div className="flex items-center gap-3">
                 <Shield className="w-8 h-8 text-orange-600" />

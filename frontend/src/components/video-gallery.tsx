@@ -1,0 +1,129 @@
+'use client'
+
+import React from 'react'
+import { Play, Calendar, Clock } from 'lucide-react'
+
+interface Video {
+  id: string
+  title: string
+  description?: string
+  status: string
+  sourceUrl: string
+  originalFilename?: string
+  durationSeconds?: number
+  width?: number
+  height?: number
+  createdAt: string
+}
+
+interface VideoGalleryProps {
+  videos: Video[]
+  loading?: boolean
+  onVideoClick?: (videoId: string) => void
+}
+
+export function VideoGallery({ videos, loading, onVideoClick }: VideoGalleryProps) {
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="text-gray-500 mt-4">Loading videos...</p>
+      </div>
+    )
+  }
+
+  if (videos.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Play className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">No Videos Yet</h3>
+        <p className="text-gray-500">Upload your first video to get started</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">
+          Your Videos ({videos.length})
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {videos.map((video) => (
+          <div
+            key={video.id}
+            className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => onVideoClick?.(video.id)}
+          >
+            {/* Video Thumbnail / Player */}
+            <div className="relative bg-gray-900 aspect-video">
+              {video.sourceUrl ? (
+                <video
+                  src={video.sourceUrl}
+                  className="w-full h-full object-contain"
+                  controls
+                  preload="metadata"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Play className="w-16 h-16 text-gray-600" />
+                </div>
+              )}
+              
+              {/* Status Badge */}
+              <div className="absolute top-3 right-3">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  video.status === 'ready' 
+                    ? 'bg-green-500 text-white'
+                    : video.status === 'processing'
+                    ? 'bg-blue-500 text-white'
+                    : video.status === 'error'
+                    ? 'bg-red-500 text-white'
+                    : 'bg-yellow-500 text-white'
+                }`}>
+                  {video.status.toUpperCase()}
+                </span>
+              </div>
+            </div>
+
+            {/* Video Info */}
+            <div className="p-4">
+              <h3 className="font-semibold text-gray-900 text-lg mb-2 truncate">
+                {video.title || video.originalFilename || 'Untitled Video'}
+              </h3>
+              
+              {video.description && (
+                <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                  {video.description}
+                </p>
+              )}
+
+              <div className="flex items-center gap-4 text-sm text-gray-500">
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  <span>{new Date(video.createdAt).toLocaleDateString()}</span>
+                </div>
+                
+                {video.durationSeconds && (
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    <span>{Math.floor(video.durationSeconds / 60)}:{String(video.durationSeconds % 60).padStart(2, '0')}</span>
+                  </div>
+                )}
+                
+                {video.width && video.height && (
+                  <span className="text-xs">
+                    {video.width}x{video.height}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

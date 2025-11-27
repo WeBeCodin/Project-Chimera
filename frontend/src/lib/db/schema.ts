@@ -111,7 +111,7 @@ export const systemConfig = pgTable('system_config', {
 
 // NextAuth.js tables (required for authentication)
 export const accounts = pgTable('accounts', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: uuid('id').defaultRandom().notNull(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   type: varchar('type', { length: 255 }).notNull(),
   provider: varchar('provider', { length: 255 }).notNull(),
@@ -124,7 +124,7 @@ export const accounts = pgTable('accounts', {
   id_token: text('id_token'),
   session_state: varchar('session_state', { length: 255 })
 }, (table) => ({
-  providerProviderAccountIdIdx: primaryKey({
+  compoundKey: primaryKey({
     columns: [table.provider, table.providerAccountId]
   }),
   userIdIdx: index('accounts_user_id_idx').on(table.userId)

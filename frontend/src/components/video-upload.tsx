@@ -29,7 +29,7 @@ export function VideoUpload({ projectId, onUploadComplete, onError }: VideoUploa
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [videoUrl, setVideoUrl] = useState('')
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null)
-  const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file')
+  const [uploadMode, setUploadMode] = useState<'file' | 'url'>('url')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -307,6 +307,22 @@ export function VideoUpload({ projectId, onUploadComplete, onError }: VideoUploa
 
       {uploadMode === 'file' ? (
         <div className="space-y-4">
+          {/* Warning about file upload */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <AlertCircle className="w-5 h-5 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-yellow-800">
+                  File uploads require additional configuration
+                </p>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Please use the <strong>"Video URL"</strong> tab to process videos from URLs instead.
+                  File upload functionality requires Vercel Blob storage configuration.
+                </p>
+              </div>
+            </div>
+          </div>
+          
           {/* File Upload Area */}
           <div
             className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${

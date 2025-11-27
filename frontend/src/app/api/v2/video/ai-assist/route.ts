@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       currentTime: timelineState?.playhead || 0
     };
 
-    const result = await streamText({
+    const result = streamText({
       model: anthropic('claude-3-haiku-20240307'),
       messages: [
         {
@@ -55,10 +55,9 @@ Be concise and actionable in your responses. Focus on practical editing advice.`
         ...messages
       ],
       temperature: 0.7,
-      maxTokens: 500,
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
 
   } catch (error) {
     console.error('AI assist error:', error);
