@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { VideoUpload } from '@/components/video-upload'
 import { JobList } from '@/components/job-status'
 import { VideoGallery } from '@/components/video-gallery'
 import { TranscriptEditor } from '@/components/transcript-editor'
 import { AnalysisResultsDisplay } from '@/components/analysis-results-display'
+import { VideoTranscriptSync } from '@/components/video-transcript-sync'
 
 interface VideoAnalysisResult {
   video: {
@@ -21,6 +22,19 @@ interface VideoAnalysisResult {
   jobs: Array<Record<string, unknown>>
 }
 
+interface TranscriptData {
+  text: string
+  duration: number
+  language: string
+  segments: Array<{
+    start: number
+    end: number
+    text: string
+    confidence: number
+  }>
+  confidence: number
+}
+
 interface Job {
   id: string
   type: string
@@ -31,6 +45,11 @@ interface Job {
   error?: string | null
   metadata?: Record<string, unknown>
   result?: Record<string, unknown>
+  outputData?: {
+    transcription?: TranscriptData
+    detection?: Record<string, unknown>
+    summarization?: Record<string, unknown>
+  }
   video?: {
     id: string
     filename: string
@@ -70,10 +89,19 @@ export default function ProjectPage() {
     type: 'success' | 'error' | 'info'
     message: string
   } | null>(null)
-  const [currentView, setCurrentView] = useState<'videos' | 'jobs' | 'analysis'>('videos')
+  const [currentView, setCurrentView] = useState<'videos' | 'jobs' | 'analysis' | 'transcript'>('videos')
   const [analysisResults, setAnalysisResults] = useState<VideoAnalysisResult | null>(null)
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const [localJobs, setLocalJobs] = useState<Job[]>([]) // Store locally created jobs
+  const [transcriptVideoUrl, setTranscriptVideoUrl] = useState<string>('')
+  const [transcriptData, setTranscriptData] = useState<TranscriptData | null>(null)
+
+  // Get video IDs that have completed jobs
+  const completedJobVideoIds = useMemo(() => {
+    return jobs
+      .filter(job => job.status === 'COMPLETED' && job.video?.id)
+      .map(job => job.video!.id)
+  }, [jobs])
 
   // Initialize project ID on mount
   useEffect(() => {
@@ -300,6 +328,51 @@ export default function ProjectPage() {
     setAnalysisResults(null)
   }
 
+  const handleWatchTranscript = async (videoId: string, sourceUrl: string) => {
+    // Find the completed job for this video to get transcript data
+    const completedJob = jobs.find(
+      job => job.video?.id === videoId && job.status === 'COMPLETED' && job.outputData?.transcription
+    )
+    
+    if (completedJob?.outputData?.transcription) {
+      setTranscriptVideoUrl(sourceUrl)
+      setTranscriptData(completedJob.outputData.transcription)
+      setCurrentView('transcript')
+    } else {
+      // Fallback: fetch from analysis API
+      try {
+        const response = await fetch(`/api/videos/${videoId}/analysis`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.transcription) {
+            setTranscriptVideoUrl(sourceUrl)
+            setTranscriptData(data.transcription as TranscriptData)
+            setCurrentView('transcript')
+          } else {
+            setNotification({
+              type: 'error',
+              message: 'No transcript data available for this video'
+            })
+            setTimeout(() => setNotification(null), 5000)
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching transcript:', err)
+        setNotification({
+          type: 'error',
+          message: 'Failed to load transcript'
+        })
+        setTimeout(() => setNotification(null), 5000)
+      }
+    }
+  }
+
+  const handleBackToVideos = () => {
+    setCurrentView('videos')
+    setTranscriptVideoUrl('')
+    setTranscriptData(null)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -373,7 +446,29 @@ export default function ProjectPage() {
           >
             Processing Jobs ({jobs.length})
           </button>
+          {currentView === 'transcript' && (
+            <button
+              onClick={handleBackToVideos}
+              className="px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+            >
+              ← Back to Videos
+            </button>
+          )}
         </div>
+
+        {/* Transcript View - Full Width */}
+        {currentView === 'transcript' && transcriptData && (
+          <div className="bg-white rounded-lg border shadow-sm p-6 mb-8">
+            <VideoTranscriptSync
+              videoUrl={transcriptVideoUrl}
+              transcript={transcriptData}
+              onSegmentEdit={(index, newText) => {
+                console.log('Edit segment:', index, newText)
+                // TODO: Implement segment editing
+              }}
+            />
+          </div>
+        )}
 
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Content */}
@@ -384,6 +479,8 @@ export default function ProjectPage() {
                   videos={videos}
                   loading={videosLoading}
                   onVideoClick={handleViewResults}
+                  onWatchTranscript={handleWatchTranscript}
+                  completedJobVideoIds={completedJobVideoIds}
                 />
               ) : currentView === 'jobs' ? (
                 <JobList 
@@ -400,6 +497,10 @@ export default function ProjectPage() {
                   loading={analysisLoading}
                   onBack={handleBackToJobs}
                 />
+              ) : currentView === 'transcript' ? (
+                <div className="text-center py-8 text-gray-500">
+                  Transcript viewer is displayed above
+                </div>
               ) : null}
             </div>
           </div>
